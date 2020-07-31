@@ -1,0 +1,240 @@
+$(document).ready(function() {
+    'use strict';
+
+    var hotkey_dict = {}
+
+    // Load user hotkeys into array.
+    chrome.storage.local.get({
+        toggle: true,
+        tabindex: false,
+        addbuttons: false,
+        save: {ctrl: true, shift: false, key: 's', code: 'KeyS'},
+        print: {ctrl: true, shift: false, key: 'q', code: 'KeyQ'},
+        search: {ctrl: true, shift: true, key: 'F', code: 'KeyF'},
+        expand: {ctrl: true, shift: false, key: ']', code: 'BracketRight'},
+        collapse: {ctrl: true, shift: false, key: '[', code: 'BracketLeft'},
+        goto_listings: {ctrl: false, shift: false, key: 'F1', code:'F1'}
+    }, function(items) {
+        Object.keys(items).forEach(function(key, index) {hotkey_dict[key] = items[key]})
+    })
+
+    // Helper function for keybinding verification
+    const keyMatch = function(id, event) {
+        if (hotkey_dict['toggle'] == false) {
+            return false
+        }
+        if (event.ctrlKey == hotkey_dict[id]['ctrl'] &&
+        event.shiftKey == hotkey_dict[id]['shift'] &&
+        event.code == hotkey_dict[id]['code']) {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    // helper function to find nested iframes
+    const frameFinder = function(start, target, options) {
+        // Helper function that recursively loops through DOM, starting at <start>, searching for an
+        // iframe that matches <target> css selector.
+        // Options accepts {selectors: true || false}
+        var result;
+        if (start.frames.length) {
+            for (let ind = 0; ind < start.frames.length; ind++) {
+                let i = start.frames[ind]
+                if ($(i.frameElement).is(target)) {
+                    result = i
+                } else {
+                    if (i.frames.length > 0) {
+                        let temp_result = frameFinder(i, target)
+                        if (temp_result != false) {
+                            result = temp_result
+                        }
+                    }
+                }
+            }
+            if (result) {
+                return result
+            } else {
+                return false
+            }
+        }
+    }
+
+    // function to create/invoke hidden iframe and print
+    const specialPrint = function() {
+        // Creates an invisible iframe of the report view of the current listing and prints the
+        // report. Only works on the listing maintenance screen, and the listing must already be
+        // saved.
+        var hidden_frame = document.querySelector("#print-frame")
+        if (!hidden_frame) {
+            var listing_pane_window = frameFinder(window.top, '#listingFrame')
+            if (listing_pane_window == false) {
+                return null
+            }
+            var listing_pane = listing_pane_window.frameElement
+            var para_id = listing_pane.src.match(/Listing\/(.*?)\?listing/)
+            if (para_id == null) {
+                alert("Can't print unsaved listing.")
+                return null
+            }
+            var domain = document.location.hostname.split(".")[0]
+            var iframe_src
+            if (domain == "bccls") {
+                iframe_src = `https://bccls.paragonrels.com/ParagonLS/Reports/Report.mvc?listingIDs=${para_id}&viewID=c144&usePDF=false`
+            } else if (domain == "bcres") {
+                iframe_src = `https://bcres.paragonrels.com/ParagonLS/Reports/Report.mvc?listingIDs=${para_id}&viewID=c65&usePDF=false`
+            }
+            hidden_frame = document.createElement('iframe')
+            hidden_frame.style.display = "none"
+            hidden_frame.src = iframe_src
+            hidden_frame.id = "print-frame"
+            document.body.appendChild(hidden_frame)
+        } else {
+            hidden_frame.src += ''
+        }
+        hidden_frame.contentWindow.print()
+    }
+
+    var dom_callback = function(list, observer) {
+        if (list.every((e) => {
+            return e.target.id == 'app_banner_session'
+        })) {
+            return
+        }
+        if (frameFinder(window.top, '#listingFrame')) {
+            // Remove date pickers from tab index
+            if (hotkey_dict['tabindex'] == true) {
+                observer.takeRecords()
+                observer.disconnect()
+                let frame = frameFinder(window.top, '#listingFrame').document
+                // remove date pickers from tab index
+                let pickers = frame.querySelectorAll('.datepick-trigger:not([tabindex="-1"])')
+                pickers.forEach(function(e) {
+                    e.setAttribute('tabindex', '-1')
+                })
+                observer.observe(document, {
+                    attributes: false,
+                    childList: true,
+                    subtree: true
+                })
+            }
+            // Add function buttons to DOM
+            if (hotkey_dict['addbuttons'] == true) {
+                observer.takeRecords()
+                observer.disconnect()
+                let frame = frameFinder(window.top, '#listingFrame').document
+                let button = $('<button type="button" class="whitespace_button" tabindex="-1">Remove Breaks</button>')
+                if ($(frame).find('.whitespace_button').length == 0) {
+                    var texts;
+                    console.log(document.location.hostname.split(".")[0])
+                    switch (document.location.hostname.split(".")[0]) {
+                        case "bcres":
+                        texts = $(frame).find('#f_550, #f_551, #f_552')
+                        break;
+                        case "bccls":
+                        texts = $(frame).find('#f_554, #f_555')
+                        break;
+                    }
+                    for (let elem of texts) {
+                        let jelem = $(elem)
+                        console.log(elem, jelem)
+                        let iter_button = button.clone()
+                        iter_button.attr('for', jelem.attr('id'))
+                        iter_button.click(function(e) {
+                            let text_elem = $(frame).find(`#${e.target.getAttribute('for')}`)
+                            let text = text_elem.prop('value')
+                            text = text.replace(/\n+/g, ' ')
+                            text_elem.prop('value', text)
+                        })
+                        jelem.before(iter_button)
+                    }
+                }
+                observer.observe(document, {
+                    attributes: false,
+                    childList: true,
+                    subtree: true
+                })
+            }
+
+        }
+    }
+
+    // All hotkeys wrapped in a callback.
+    var key_callback = function(e) {
+        // this log line to display hotkeys in console for debugging
+        //console.log(`${e.ctrlKey}+${e.shiftKey}+${e.key} | ${e.code}`)
+
+        // Ctrl+] to expand all containers
+        if (keyMatch('expand', e)) {
+            //var open = document.getElementsByClassName("f-form-openall").item(0)
+            //open.click()
+            let target_frame = frameFinder(window.top, '#listingFrame').document
+            if (target_frame != false && typeof target_frame != "undefined") {
+                //console.log(target_frame)
+                var open = target_frame.querySelector(".f-form-openall")
+                open.click()
+            }
+        }
+
+        // Ctrl+[ to collapse all containers
+        if (keyMatch('collapse', e)) {
+            let target_frame = frameFinder(window.top, "#listingFrame").document
+            if (target_frame != false && typeof target_frame != "undefined") {
+                var close = target_frame.querySelector(".f-form-closeall")
+                close.click()
+            }
+        }
+
+        // Ctrl+Shift+F to focus the Power Search bar
+        if (keyMatch('search', e)) {
+            let field = window.top.document.querySelector(".select2-search__field")
+            field.click()
+            field.select()
+        }
+
+        // Ctrl+Q to print/download the current listing
+        if (keyMatch('print', e)) {
+            if (frameFinder(window.top, "#listingFrame")) {
+                e.preventDefault()
+                specialPrint()
+            }
+        }
+
+        // Ctrl+S to save listing
+        if (keyMatch('save', e)) {
+            if (frameFinder(window.top, '#listingFrame')) {
+                e.preventDefault()
+                frameFinder(window.top, '#listingFrame').document.querySelector('a#Save').click()
+            } else {
+                console.log("Couldn't find listingFrame")
+            }
+        }
+
+        if (keyMatch('goto_listings', e)) {
+            e.preventDefault()
+            window.top.document.querySelector('#listings-nav').click()
+            //$('#listings-nav').click()
+            window.top.document.querySelector('#listings-nav + div').style.display = 'none'
+            //$('#listings-nav + div').css('display','none')
+            window.top.document.querySelector('#listings-nav + div a[fullWindow="False"]').click()
+            //$('#listings-nav + div').css('display', 'block')
+            window.top.document.querySelector('#listings-nav + div').style.display = 'block'
+            //$('div#jGrowl').hide()
+            try {
+                window.top.document.querySelector('div#jGrowl').style.display = 'none'
+            } catch {}
+        }
+    }
+
+    var button_style = $(`<style>.whitespace_button {float:left;clear:left;display:inline-block;margin-left:120px;}</style>`)
+    $('head').append(button_style)
+
+    // Event listener to execute callback on keypress
+    document.onkeydown = key_callback
+    const observer = new MutationObserver(dom_callback)
+    observer.observe(document, {
+        attributes: false,
+        childList: true,
+        subtree: true
+    })
+});

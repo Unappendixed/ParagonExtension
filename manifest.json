@@ -1,0 +1,28 @@
+{
+    "manifest_version": 2,
+    "name": "Paragon Userkeys",
+    "version": "0.1",
+    "description": "Adds several hotkeys to common tasks in Paragon. Contact bcarlson@rebgv.org for assistance.",
+    "options_page": "options.html",
+    "content_security_policy": "script-src 'self' https://ajax.aspnetcdn.com; object-src 'self'",
+    "permissions": ["storage"],
+    "icons":
+    {
+    "16": "icon_16.png",
+    "48": "icon_48.png"
+    },
+    "browser_action": {
+        "default_title": "Options"
+    },
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": true
+    },
+    "content_scripts": [
+            {
+                "matches": ["https://*.paragonrels.com/*"],
+                "all_frames": true,
+                "js": ["jquery-3.4.1.js", "content.js"]
+            }
+        ]
+}

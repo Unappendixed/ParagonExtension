@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="theme.css">
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.4.1.slim.js"></script>
+    <script src="hotkeys.js"></script>
+    <title>Paragon User Keys Config</title>
+</head>
+<body>
+    <div id="setting_pane">
+        <input type="checkbox" id="tabindex" class="option option_check" readonly></input>
+        <label for="tabindex" class="option option_text">Remove Date Pickers from Tab Index</label>
+        <br>
+        <input type="checkbox" id="addbuttons" class="option option_check" readonly></input>
+        <label for="addbuttons" class="option option_text">Extra Function Buttons</label>
+        <br>
+        <input type="checkbox" id="maintain_context" class="option option_check" readonly></input>
+        <label for="maintain_context" class="option option_text">Maintain Listings Context Menu</label>
+        <br>
+
+        
+        <input type="checkbox" id="toggle" class="option option_check"></input>
+        <label id="toggle-all-label" for="toggle" class="option option_text">Enable/Disable All Hotkeys</label>
+        <div id="button_wrap">
+            <div id="button_div">
+                <input type="edit" id="save" class="option option_edit" readonly></input>
+                <label for="save" class="option option_text">Save</label>
+                <input type="edit" id="print" class="option option_edit" readonly></input>
+                <label for="print" class="option option_text">Print</label>
+
+                <input type="edit" id="search" class="option option_edit" readonly></input>
+                <label for="search" class="option option_text">Power Search</label>
+
+                <input type="edit" id="expand" class="option option_edit" readonly></input>
+                <label for="expand" class="option option_text">Expand all</label>
+
+                <input type="edit" id="collapse" class="option option_edit" readonly></input>
+                <label for="collapse" class="option option_text">Collapse all</label>
+
+                <input type="edit" id="goto_listings" class="option option_edit" readonly></input>
+                <label for="goto_listings" class="option option_text">Open Listing Tab</label>
+
+                <input type="edit" id="toggle_privacy" class="option option_edit" readonly></input>
+                <label for="toggle_privacy" class="option option_text">Toggle Privacy Protection</label>
+
+                <input type="edit" id="close_tab" class="option option_edit" readonly></input>
+                <label for="close_tab" class="option option_text">Close Sub Tab</label>
+            </div>
+            <div id="bottom_buttons">
+                <button class="btn-main" id="save-form">Save</button>
+                <button class="btn-main" id="reset-form">Reset</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
