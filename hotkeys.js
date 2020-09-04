@@ -18,6 +18,8 @@ $(document).ready(function() {
             tabindex: false,
             addbuttons: false,
             maintain_context: false,
+            cancellation_shortcut: false,
+            brokerage_header: false,
             save: {ctrl: true, alt:false, shift: false, key: 's', code: 'KeyS'},
             print: {ctrl: true, alt:false, shift: false, key: 'q', code: 'KeyQ'},
             search: {ctrl: true, alt:false, shift: true, key: 'F', code: 'KeyF'},
@@ -25,7 +27,8 @@ $(document).ready(function() {
             collapse: {ctrl: true, alt:false, shift: false, key: '[', code: 'BracketLeft'},
             goto_listings: {ctrl: false, alt:false, shift: false, key: 'F1', code:'F1'},
             toggle_privacy: {ctrl:false, alt:false, shift:false, key: 'F2', code:'F2'},
-            close_tab: {ctrl: false, alt:true, shift:false, key: '\`', code: 'Backquote'}
+            close_tab: { ctrl: false, alt: true, shift: false, key: '\`', code: 'Backquote' },
+            exp_calc: {ctrl:false, alt:false, shift:false, key: 'F3', code:'F3'},
         }, function(items) {
             Object.keys(items).forEach(function(key, index) {
                 hotkey_dict[key] = items[key]
