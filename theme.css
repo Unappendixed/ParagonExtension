@@ -39,12 +39,7 @@ body {
 #reset-form {
     grid-column: 2/2
 }
-.option {
-    /*
-    margin: 0px 5px 0px 5px;
-    padding: 0px 5px 0px 5px;
-    */
-}
+
 .option_text {
     color: white;
     font-size: 20px;
@@ -78,9 +73,7 @@ body {
     user-select: none;
 
 }
-.option_edit:focus {
-    /*box-shadow: 0px 0px 1px 1px inset;*/
-}
+
 .btn-main {
     grid-column: 7/7;
     grid-row: 6/6;
