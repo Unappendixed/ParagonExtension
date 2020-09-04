@@ -185,11 +185,11 @@ var dom_callback = function (list, observer) {
 				subtree: true
 			})
 		}
-		if (hotkey_dict['brokerage_header'] && doc.querySelector('#hdnf_28')) { // Replace with hotkey setting later
+		// Add brokerage name to the header for easier amendment processing.
+		if (hotkey_dict['brokerage_header'] && doc.querySelector('#hdnf_28')) {
 			observer.takeRecords()
 			observer.disconnect()
 
-			// let frame = frameFinder(window.top, 'listingFrame').document
 			let title = doc.querySelector(".f-pcnm-legend")
 			if (!title.dataset.brokerage) {
 				let json_string = doc.querySelector("#hdnf_28").value
@@ -203,6 +203,8 @@ var dom_callback = function (list, observer) {
 				subtree: true
 			})
 		}
+		// Displays the expiration of the contract next to the cancellation
+		// expiration date for quicker cancellation processing.
 		if (hotkey_dict['cancellation_shortcut'] && doc.querySelector('#f_209')) {
 			observer.takeRecords()
 			observer.disconnect()
@@ -223,11 +225,9 @@ var dom_callback = function (list, observer) {
 		if (hotkey_dict['addbuttons'] == true) {
 			observer.takeRecords()
 			observer.disconnect()
-			// let frame = frameFinder(window.top, 'listingFrame').document
 			let button = $('<button type="button" class="whitespace_button" tabindex="-1">Remove Breaks</button>')
 			if ($(doc).find('.whitespace_button').length == 0) {
 				var texts;
-				//console.log(document.location.hostname.split(".")[0])
 				switch (document.location.hostname.split(".")[0]) {
 					case "bcres":
 						texts = $(doc).find('#f_550, #f_551, #f_552')
@@ -238,7 +238,6 @@ var dom_callback = function (list, observer) {
 				}
 				for (let elem of texts) {
 					let jelem = $(elem)
-					//console.log(elem, jelem)
 					let iter_button = button.clone()
 					iter_button.attr('for', jelem.attr('id'))
 					iter_button.click(function (e) {
@@ -258,11 +257,6 @@ var dom_callback = function (list, observer) {
 		}
 
 	}
-	// if (elemFinder(window.top, "#ListingIDs")) {
-	//     let frame = elemFinder(window.top, "#ListringIDs")
-	//     let button = $("#Go", frame)
-	//     button.innerHTML = "Test"
-	// }
 }
 
 // right click on listing grid to open actions
@@ -386,6 +380,7 @@ var key_callback = function (e) {
 		}
 	}
 
+	// Shortcut to close tabs, starting with the current, most deeply nested tab
 	if (keyMatch('close_tab', e)) {
 		e.preventDefault()
 		let jframe = $(frameFinder(window.top, 'listingFrame'))
@@ -393,6 +388,9 @@ var key_callback = function (e) {
 		lst[lst.length - 1].click()
 
 	}
+
+	// Shortcut to calculate 60 days from the cancel effective date and place
+	// the value in the cancellation expiry date.
 	if (keyMatch('exp_calc', e)) {
 		e.preventDefault()
 		let doc = frameFinder(window.top, 'listingFrame').document
@@ -402,10 +400,8 @@ var key_callback = function (e) {
 			let eff_array = exp.value.split('/')
 			eff_array.forEach((v, i) => { eff_array[i] = Number(v) })
 			let eff_date = new Date(eff_array[2], eff_array[0] - 1, eff_array[1])
-			console.log(eff_date)
 			let new_date = eff_date
 			new_date.setDate(eff_date.getDate() + 59)
-			console.log(new_date)
 			let new_date_string = `${new_date.getMonth() + 1}/${new_date.getDate()}/${new_date.getFullYear()}`
 			// eff.innerHTML += `<span><i>+60 days: (${new_date_string})</i></span>`
 			doc.querySelector("#f_209").value = new_date_string
