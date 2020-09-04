@@ -11,6 +11,7 @@ chrome.storage.local.get({
 	maintain_context: false,
 	cancellation_shortcut: false,
 	brokerage_header: false,
+	region_warning: true,
 	save: { ctrl: true, alt: false, shift: false, key: 's', code: 'KeyS' },
 	print: { ctrl: true, alt: false, shift: false, key: 'q', code: 'KeyQ' },
 	search: { ctrl: true, alt: false, shift: true, key: 'F', code: 'KeyF' },
@@ -19,7 +20,7 @@ chrome.storage.local.get({
 	goto_listings: { ctrl: false, alt: false, shift: false, key: 'F1', code: 'F1' },
 	toggle_privacy: { ctrl: false, alt: false, shift: false, key: 'F2', code: 'F2' },
 	close_tab: { ctrl: false, alt: true, shift: false, key: '\`', code: 'Backquote' },
-	exp_calc: {ctrl: false, alt: false, shift: false, key: 'F3', code: 'F3'}
+	exp_calc: { ctrl: false, alt: false, shift: false, key: 'F3', code: 'F3' }
 }, function (items) {
 	Object.keys(items).forEach(function (key, index) { hotkey_dict[key] = items[key] })
 })
@@ -150,6 +151,24 @@ var dom_callback = function (list, observer) {
 	let frame = frameFinder(window.top, 'listingFrame')
 	let doc = frame.document
 	if (frame) {
+		// Warn user if the listing they've opened is not a REBGV listing.
+		if (hotkey_dict["region_warning"] && doc.querySelector("#f_4")) {
+			observer.takeRecords()
+			observer.disconnect()
+			const boardAlias = {"F" : "FVREB", "H": "CADREB", "N": "BCNREB"}
+			let region = doc.querySelector("#f_4").parentElement.parentElement.firstElementChild.firstElementChild.firstElementChild
+			if (region) {
+				if (boardAlias[region.innerHTML[0]] && !region.dataset.hasWarned) {
+					alert(`Warning! This listing belongs to ${boardAlias[region.innerHTML[0]]}.\nYou can disable this warning in the extension settings.`)
+					region.dataset.hasWarned = "true"
+				}
+			}
+			observer.observe(document, {
+				attributes: false,
+				childList: true,
+				subtree: true
+			})
+		}
 		// Remove date pickers from tab index
 		if (hotkey_dict['tabindex'] == true) {
 			observer.takeRecords()

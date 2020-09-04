@@ -20,6 +20,7 @@ $(document).ready(function() {
             maintain_context: false,
             cancellation_shortcut: false,
             brokerage_header: false,
+            region_warning: true,
             save: {ctrl: true, alt:false, shift: false, key: 's', code: 'KeyS'},
             print: {ctrl: true, alt:false, shift: false, key: 'q', code: 'KeyQ'},
             search: {ctrl: true, alt:false, shift: true, key: 'F', code: 'KeyF'},
