@@ -25,12 +25,23 @@ chrome.storage.local.get({
 	Object.keys(items).forEach(function (key, index) { hotkey_dict[key] = items[key] })
 })
 
+/** Checks whether paragon is commercial or residential.
+ * @return {Boolean} True if commercial, false if residential.
+ */
+function isCommercial() {
+	if (document.location.hostname.split(".")[0] == "bccls") {
+		return true
+	} else {
+		return false
+	}
+}
+
 /** Helper function for keybinding verification
  * @param {String} id hotkey_dict key to check key combination against
  * @param {Event} event Event object.
  * @return {Boolean} Returns true if the keypresses match user's keybinds, false otherwise.
  */
-function keyMatch (id, event) {
+function keyMatch(id, event) {
 	if (hotkey_dict['toggle'] == false) {
 		return false
 	}
@@ -51,7 +62,7 @@ function keyMatch (id, event) {
  * @param {object} start DOMElement to start searching from.
  * @param {object} target iframe element to search for.
  */
-function frameFinder (start, target) {
+function frameFinder(start, target) {
 	// Helper function that recursively loops through DOM, starting at <start>, searching for an
 	// iframe that matches <target> css selector.
 	var result;
@@ -111,7 +122,7 @@ function elemFinder(start, target) {
 }
 
 // function to create/invoke hidden iframe and print
-function specialPrint () {
+function specialPrint() {
 	// Creates an invisible iframe of the report view of the current listing and prints the
 	// report. Only works on the listing maintenance screen, and the listing must already be
 	// saved.
@@ -146,7 +157,7 @@ function specialPrint () {
 }
 
 // Tweaks that need to intercept the DOM go here.
-function dom_callback (list, observer) {
+function dom_callback(list, observer) {
 	// below excludes the app banner refresh from DOM observer calls
 	if (list.every((e) => {
 		return e.target.id == 'app_banner_session'
@@ -161,7 +172,7 @@ function dom_callback (list, observer) {
 		if (hotkey_dict["region_warning"] && doc.querySelector("#f_4")) {
 			observer.takeRecords()
 			observer.disconnect()
-			const boardAlias = {"F" : "FVREB", "H": "CADREB", "N": "BCNREB"}
+			const boardAlias = { "F": "FVREB", "H": "CADREB", "N": "BCNREB" }
 			let region = doc.querySelector("#f_4").parentElement.parentElement.firstElementChild.firstElementChild.firstElementChild
 			if (region) {
 				if (boardAlias[region.innerHTML[0]] && !region.dataset.hasWarned) {
@@ -214,9 +225,13 @@ function dom_callback (list, observer) {
 		if (hotkey_dict['cancellation_shortcut'] && doc.querySelector('#f_209')) {
 			observer.takeRecords()
 			observer.disconnect()
-
 			let expiry = doc.querySelector("#f_34").value
-			let canc = doc.querySelector('#f_209').parentElement.parentElement
+			let canc
+			if (isCommercial()) {
+				canc = doc.querySelector("#f_471").parentElement.parentElement
+			} else {
+				canc = doc.querySelector('#f_209').parentElement.parentElement
+			}
 			if (!canc.dataset.mod) {
 				canc.innerHTML += `<span><i>Expiry: (${expiry})</i></span>`
 				canc.dataset.mod = "true"
@@ -266,7 +281,7 @@ function dom_callback (list, observer) {
 }
 
 // right click on listing grid to open actions
-function mouse_callback (e) {
+function mouse_callback(e) {
 	if (hotkey_dict['maintain_context']) {
 		if ($(e.target).is('td') && $('#gbox_grid').length > 0) {
 			e.preventDefault()
@@ -278,7 +293,7 @@ function mouse_callback (e) {
 }
 
 // All hotkeys wrapped in a callback.
-function key_callback (e) {
+function key_callback(e) {
 	// this log line to display hotkeys in console for debugging
 	//console.log(`${e.ctrlKey}+${e.shiftKey}+${e.key} | ${e.code}`)
 
@@ -400,17 +415,24 @@ function key_callback (e) {
 	if (keyMatch('exp_calc', e)) {
 		e.preventDefault()
 		let doc = frameFinder(window.top, 'listingFrame').document
-		let eff = doc.querySelector("#f_474").parentElement.parentElement
-		let exp = doc.querySelector("#f_474")
-		if (exp.value.length == 10) {
-			let eff_array = exp.value.split('/')
+		let canc
+		let eff
+		if (isCommercial()) {
+			canc = doc.querySelector("#f_471")
+			eff = doc.querySelector("#f_211")
+		} else {
+			canc = doc.querySelector("#f_209")
+			eff = doc.querySelector("#f_474")
+		}
+		if (eff.value.length == 10) {
+			let eff_array = eff.value.split('/')
 			eff_array.forEach((v, i) => { eff_array[i] = Number(v) })
 			let eff_date = new Date(eff_array[2], eff_array[0] - 1, eff_array[1])
 			let new_date = eff_date
 			new_date.setDate(eff_date.getDate() + 59)
 			let new_date_string = `${new_date.getMonth() + 1}/${new_date.getDate()}/${new_date.getFullYear()}`
 			// eff.innerHTML += `<span><i>+60 days: (${new_date_string})</i></span>`
-			doc.querySelector("#f_209").value = new_date_string
+			canc.value = new_date_string
 		}
 	}
 }
