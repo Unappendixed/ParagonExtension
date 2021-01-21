@@ -25,8 +25,11 @@ chrome.storage.local.get({
 	Object.keys(items).forEach(function (key, index) { hotkey_dict[key] = items[key] })
 })
 
-
-// Helper function for keybinding verification
+/** Helper function for keybinding verification
+ * @param {String} id hotkey_dict key to check key combination against
+ * @param {Event} event Event object.
+ * @return {Boolean} Returns true if the keypresses match user's keybinds, false otherwise.
+ */
 function keyMatch (id, event) {
 	if (hotkey_dict['toggle'] == false) {
 		return false
@@ -44,7 +47,10 @@ function keyMatch (id, event) {
 	}
 }
 
-// helper function to find nested iframes
+/** Helper function to find nested iframes. Recursive.
+ * @param {object} start DOMElement to start searching from.
+ * @param {object} target iframe element to search for.
+ */
 function frameFinder (start, target) {
 	// Helper function that recursively loops through DOM, starting at <start>, searching for an
 	// iframe that matches <target> css selector.
