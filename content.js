@@ -27,7 +27,7 @@ chrome.storage.local.get({
 
 
 // Helper function for keybinding verification
-const keyMatch = function (id, event) {
+function keyMatch (id, event) {
 	if (hotkey_dict['toggle'] == false) {
 		return false
 	}
@@ -45,7 +45,7 @@ const keyMatch = function (id, event) {
 }
 
 // helper function to find nested iframes
-const frameFinder = function (start, target) {
+function frameFinder (start, target) {
 	// Helper function that recursively loops through DOM, starting at <start>, searching for an
 	// iframe that matches <target> css selector.
 	var result;
@@ -105,7 +105,7 @@ function elemFinder(start, target) {
 }
 
 // function to create/invoke hidden iframe and print
-const specialPrint = function () {
+function specialPrint () {
 	// Creates an invisible iframe of the report view of the current listing and prints the
 	// report. Only works on the listing maintenance screen, and the listing must already be
 	// saved.
@@ -140,7 +140,7 @@ const specialPrint = function () {
 }
 
 // Tweaks that need to intercept the DOM go here.
-var dom_callback = function (list, observer) {
+function dom_callback (list, observer) {
 	// below excludes the app banner refresh from DOM observer calls
 	if (list.every((e) => {
 		return e.target.id == 'app_banner_session'
@@ -260,7 +260,7 @@ var dom_callback = function (list, observer) {
 }
 
 // right click on listing grid to open actions
-var mouse_callback = function (e) {
+function mouse_callback (e) {
 	if (hotkey_dict['maintain_context']) {
 		if ($(e.target).is('td') && $('#gbox_grid').length > 0) {
 			e.preventDefault()
@@ -272,7 +272,7 @@ var mouse_callback = function (e) {
 }
 
 // All hotkeys wrapped in a callback.
-var key_callback = function (e) {
+function key_callback (e) {
 	// this log line to display hotkeys in console for debugging
 	//console.log(`${e.ctrlKey}+${e.shiftKey}+${e.key} | ${e.code}`)
 
