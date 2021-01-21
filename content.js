@@ -58,6 +58,18 @@ function keyMatch(id, event) {
 	}
 }
 
+function numberPad(date) {
+	let day = String(date.getDate())
+	if (day.length == 1) {
+		day = "0" + day
+	}
+	let month = String(date.getMonth() + 1)
+	if (month.length == 1) {
+		month = 0 + month
+	}
+	return `${month}/${day}/${date.getFullYear()}`
+}
+
 /** Helper function to find nested iframes. Recursive.
  * @param {object} start DOMElement to start searching from.
  * @param {object} target iframe element to search for.
@@ -430,7 +442,8 @@ function key_callback(e) {
 			let eff_date = new Date(eff_array[2], eff_array[0] - 1, eff_array[1])
 			let new_date = eff_date
 			new_date.setDate(eff_date.getDate() + 59)
-			let new_date_string = `${new_date.getMonth() + 1}/${new_date.getDate()}/${new_date.getFullYear()}`
+			//let new_date_string = `${new_date.getMonth() + 1}/${new_date.getDate()}/${new_date.getFullYear()}`
+			let new_date_string = numberPad(new_date)
 			// eff.innerHTML += `<span><i>+60 days: (${new_date_string})</i></span>`
 			canc.value = new_date_string
 		}
