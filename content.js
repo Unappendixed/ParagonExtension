@@ -102,7 +102,7 @@ function frameFinder(start, target) {
 
 // Recursively find elements through frames. Returns a list of elements matching the target CSS
 // selector, starting from the target.
-// BROKEN -- TODO
+// FIXME - broken
 function elemFinder(start, target) {
 	console.log(start)
 	var result_list = []
@@ -133,11 +133,14 @@ function elemFinder(start, target) {
 	}
 }
 
-// function to create/invoke hidden iframe and print
+/** Creates an invisible iframe of the report view of the current listing and prints the
+ * report. Only works on the listing maintenance screen, and the listing must already be
+ * saved.
+ * 
+ * @returns none
+ */
 function specialPrint() {
-	// Creates an invisible iframe of the report view of the current listing and prints the
-	// report. Only works on the listing maintenance screen, and the listing must already be
-	// saved.
+	
 	var hidden_frame = document.querySelector("#print-frame")
 	if (!hidden_frame) {
 		var listing_pane_window = frameFinder(window.top, 'listingFrame')
@@ -169,6 +172,7 @@ function specialPrint() {
 }
 
 // Tweaks that need to intercept the DOM go here.
+// TODO - This block might benefit from increased modularity.
 function dom_callback(list, observer) {
 	// below excludes the app banner refresh from DOM observer calls
 	if (list.every((e) => {
@@ -305,6 +309,7 @@ function mouse_callback(e) {
 }
 
 // All hotkeys wrapped in a callback.
+// TODO - This block might benefit from increased modularity.
 function key_callback(e) {
 	// this log line to display hotkeys in console for debugging
 	//console.log(`${e.ctrlKey}+${e.shiftKey}+${e.key} | ${e.code}`)
