@@ -29,11 +29,7 @@ chrome.storage.local.get({
  * @return {Boolean} True if commercial, false if residential.
  */
 function isCommercial() {
-	if (document.location.hostname.split(".")[0] == "bccls") {
-		return true
-	} else {
-		return false
-	}
+	return document.location.hostname.split(".")[0] == "bccls"
 }
 
 /** Helper function for keybinding verification
@@ -42,16 +38,19 @@ function isCommercial() {
  * @return {Boolean} Returns true if the keypresses match user's keybinds, false otherwise.
  */
 function keyMatch(id, event) {
-	if (hotkey_dict['toggle'] == false) {
+	const areKeysDisabledGlobal = hotkey_dict['toggle'] == false;
+	if (areKeysDisabledGlobal) {
 		return false
 	}
-	if (hotkey_dict[id] == 'disabled') {
+	const isKeyDisabled = hotkey_dict[id] == 'disabled';
+	if (isKeyDisabled) {
 		return false
 	}
-	if (event.ctrlKey == hotkey_dict[id]['ctrl'] &&
+	const doesKeyMatch = event.ctrlKey == hotkey_dict[id]['ctrl'] &&
 		event.altKey == hotkey_dict[id]['alt'] &&
 		event.shiftKey == hotkey_dict[id]['shift'] &&
-		event.code == hotkey_dict[id]['code']) {
+		event.code == hotkey_dict[id]['code'];
+	if (doesKeyMatch) {
 		return true
 	} else {
 		return false
@@ -74,7 +73,7 @@ function numberPad(date) {
  * @param {object} start DOMElement to start searching from.
  * @param {object} target iframe element to search for.
  */
-function frameFinder(start, target) {
+function getNestedFrame(start, target) {
 	// Helper function that recursively loops through DOM, starting at <start>, searching for an
 	// iframe that matches <target> css selector.
 	var result;
@@ -85,7 +84,7 @@ function frameFinder(start, target) {
 				result = i
 			} else {
 				if (i.frames.length > 0) {
-					let temp_result = frameFinder(i, target)
+					let temp_result = getNestedFrame(i, target)
 					if (temp_result != false) {
 						result = temp_result
 					}
@@ -103,7 +102,7 @@ function frameFinder(start, target) {
 // Recursively find elements through frames. Returns a list of elements matching the target CSS
 // selector, starting from the target.
 // BROKEN -- TODO
-function elemFinder(start, target) {
+function getNestedElement(start, target) {
 	console.log(start)
 	var result_list = []
 	for (let i of start.children) {
@@ -112,13 +111,13 @@ function elemFinder(start, target) {
 			result_list.push(i)
 		}
 		if (j.is('iframe')) {
-			let temp_result = elemFinder(i.contentDocument, target)
+			let temp_result = getNestedElement(i.contentDocument, target)
 			if (temp_result != false) {
 				result_list = result_list.concat(temp_result)
 			}
 		}
 		if (i.children.length > 0) {
-			let temp_result = elemFinder(i, target)
+			let temp_result = getNestedElement(i, target)
 			if (temp_result != false) {
 				result_list = result_list.concat(temp_result)
 			}
@@ -134,172 +133,169 @@ function elemFinder(start, target) {
 }
 
 // function to create/invoke hidden iframe and print
-function specialPrint() {
+function printReport() {
 	// Creates an invisible iframe of the report view of the current listing and prints the
 	// report. Only works on the listing maintenance screen, and the listing must already be
 	// saved.
-	var hidden_frame = document.querySelector("#print-frame")
-	if (!hidden_frame) {
-		var listing_pane_window = frameFinder(window.top, 'listingFrame')
-		if (listing_pane_window == false) {
-			return null
-		}
-		var listing_pane = listing_pane_window.frameElement
-		var para_id = listing_pane.src.match(/Listing\/(.*?)\?listing/)
-		if (para_id == null) {
-			alert("Can't print unsaved listing.")
-			return null
-		}
-		var domain = document.location.hostname.split(".")[0]
-		var iframe_src
-		if (domain == "bccls") {
-			iframe_src = `https://bccls.paragonrels.com/ParagonLS/Reports/Report.mvc?listingIDs=${para_id}&viewID=c144&usePDF=false`
-		} else if (domain == "bcres") {
-			iframe_src = `https://bcres.paragonrels.com/ParagonLS/Reports/Report.mvc?listingIDs=${para_id}&viewID=c65&usePDF=false`
-		}
-		hidden_frame = document.createElement('iframe')
-		hidden_frame.style.display = "none"
-		hidden_frame.src = iframe_src
-		hidden_frame.id = "print-frame"
-		document.body.appendChild(hidden_frame)
-	} else {
-		hidden_frame.contentWindow.location.reload()
+	var hidden_frame = document.querySelector("#print-frame") ?? false;
+	if (hidden_frame) {
+		hidden_frame.parentElement.removeChild(hidden_frame)
 	}
+	var listing_pane_window = getNestedFrame(window.top, 'listingFrame')
+	if (listing_pane_window == false) {
+		return
+	}
+	var listing_pane = listing_pane_window.frameElement
+	var listing_id = listing_pane.src.match(/Listing\/(.*?)\?listing/)
+	if (!listing_id) {
+		alert("Can't print unsaved listing.")
+		return
+	}
+	var iframe_src
+	if (isCommercial()) {
+		iframe_src = `https://bccls.paragonrels.com/ParagonLS/Reports/Report.mvc?listingIDs=${listing_id}&viewID=c144&usePDF=false`
+	} else {
+		iframe_src = `https://bcres.paragonrels.com/ParagonLS/Reports/Report.mvc?listingIDs=${listing_id}&viewID=c65&usePDF=false`
+	}
+	hidden_frame = document.createElement('iframe')
+	hidden_frame.style.display = "none"
+	hidden_frame.src = iframe_src
+	hidden_frame.id = "print-frame"
+	document.body.appendChild(hidden_frame)
 	hidden_frame.contentWindow.print()
 }
 
 // Tweaks that need to intercept the DOM go here.
-function dom_callback(list, observer) {
-	// below excludes the app banner refresh from DOM observer calls
-	if (list.every((e) => {
-		return e.target.id == 'app_banner_session'
-	})) {
+function dom_callback(mutation_list, observer) {
+	const isBannerInMutationList = mutation_list.every((e) => e.target.id == 'app_banner_session');
+	if (isBannerInMutationList) {
 		return
 	}
-	// we only want these to take effect while the listing iframe is loaded
-	let frame = frameFinder(window.top, 'listingFrame')
+	let frame = getNestedFrame(window.top, 'listingFrame')
+
+	if (!frame) { return } // guard clause
 	let doc = frame.document
-	if (frame) {
-		// Warn user if the listing they've opened is not a REBGV listing.
-		if (hotkey_dict["region_warning"] && doc.querySelector("#f_4")) {
-			observer.takeRecords()
-			observer.disconnect()
-			const boardAlias = { "F": "FVREB", "H": "CADREB", "N": "BCNREB" }
-			let region = doc.querySelector("#f_4").parentElement.parentElement.firstElementChild.firstElementChild.firstElementChild
-			if (region) {
-				if (boardAlias[region.innerHTML[0]] && !region.dataset.hasWarned) {
-					alert(`Warning! This listing belongs to ${boardAlias[region.innerHTML[0]]}.\nYou can disable this warning in the extension settings.`)
-					region.dataset.hasWarned = "true"
-				}
-			}
-			observer.observe(document, {
-				attributes: false,
-				childList: true,
-				subtree: true
-			})
-		}
-		// Remove date pickers from tab index
-		if (hotkey_dict['tabindex'] == true) {
-			observer.takeRecords()
-			observer.disconnect()
-			// let frame = frameFinder(window.top, 'listingFrame').document
-			// remove date pickers from tab index
-			let pickers = doc.querySelectorAll('.datepick-trigger:not([tabindex="-1"])')
-			pickers.forEach(function (e) {
-				e.setAttribute('tabindex', '-1')
-			})
-			observer.observe(document, {
-				attributes: false,
-				childList: true,
-				subtree: true
-			})
-		}
-		// Add brokerage name to the header for easier amendment processing.
-		if (hotkey_dict['brokerage_header'] && doc.querySelector('#hdnf_28')) {
-			observer.takeRecords()
-			observer.disconnect()
+	
+	// place constants here
+	const canFindAreaField = doc.querySelector("#f_4") ?? false;
+	const shouldWarnRegion = hotkey_dict["region_warning"];
+	const shouldFixTabIndex = hotkey_dict['tabindex'];
+	const shouldDisplayBrokerage = hotkey_dict['brokerage_header'];
+	const canFindBrokerageField = doc.querySelector('#hdnf_28') ?? false;
+	const shouldShowExpiryNextToCancellation = hotkey_dict['cancellation_shortcut'];
+	const canFindCancellationField = doc.querySelector('#f_209') ?? false;
+	const shouldShowRemoveBreakButtons = hotkey_dict['addbuttons'];
 
-			let title = doc.querySelector(".f-pcnm-legend")
-			if (!title.dataset.brokerage) {
-				let json_string = doc.querySelector("#hdnf_28").value
-				title.dataset.brokerage = "true"
-				title.innerHTML += " | " + JSON.parse(json_string)[0].Name
-			}
+	disconnectObserver()
+	if (shouldWarnRegion && canFindAreaField) {
+		checkRegionAndWarn()
+	}
+	if (shouldFixTabIndex) {
+		removeDatePickersFromTabIndex();
+	}
+	if (shouldDisplayBrokerage && canFindBrokerageField) {
+		findAndDisplayBrokerage();
+	}
+	if (shouldShowExpiryNextToCancellation && canFindCancellationField) {
+		showExpiryNextToCancellation();
+	}
+	if (shouldShowRemoveBreakButtons) {
+		createRemoveBreakButtons()
+	}
+	reconnectObserver()
 
-			observer.observe(document, {
-				attributes: false,
-				childList: true,
-				subtree: true
-			})
-		}
-		// Displays the expiration of the contract next to the cancellation
-		// expiration date for quicker cancellation processing.
-		if (hotkey_dict['cancellation_shortcut'] && doc.querySelector('#f_209')) {
-			observer.takeRecords()
-			observer.disconnect()
-			let expiry = doc.querySelector("#f_34").value
-			let canc
-			if (isCommercial()) {
-				canc = doc.querySelector("#f_471").parentElement.parentElement
-			} else {
-				canc = doc.querySelector('#f_209').parentElement.parentElement
+	function createRemoveBreakButtons() {
+		let button = $('<button type="button" class="whitespace_button" tabindex="-1">Remove Breaks</button>');
+		if ($(doc).find('.whitespace_button').length == 0) {
+			var texts;
+			switch (document.location.hostname.split(".")[0]) {
+				case "bcres":
+					texts = $(doc).find('#f_550, #f_551, #f_552');
+					break;
+				case "bccls":
+					texts = $(doc).find('#f_554, #f_555');
+					break;
 			}
-			if (!canc.dataset.mod) {
-				canc.innerHTML += `<span><i>Expiry: (${expiry})</i></span>`
-				canc.dataset.mod = "true"
+			for (let elem of texts) {
+				let jelem = $(elem);
+				let iter_button = button.clone();
+				iter_button.attr('for', jelem.attr('id'));
+				iter_button.click(function (e) {
+					let text_elem = $(doc).find(`#${e.target.getAttribute('for')}`);
+					let text = text_elem.prop('value');
+					text = text.replace(/\n+/g, ' ');
+					text_elem.prop('value', text);
+				});
+				jelem.before(iter_button);
 			}
-			observer.observe(document, {
-				attributes: false,
-				childList: true,
-				subtree: true
-			})
 		}
-		// Add function buttons to DOM
-		if (hotkey_dict['addbuttons'] == true) {
-			observer.takeRecords()
-			observer.disconnect()
-			let button = $('<button type="button" class="whitespace_button" tabindex="-1">Remove Breaks</button>')
-			if ($(doc).find('.whitespace_button').length == 0) {
-				var texts;
-				switch (document.location.hostname.split(".")[0]) {
-					case "bcres":
-						texts = $(doc).find('#f_550, #f_551, #f_552')
-						break;
-					case "bccls":
-						texts = $(doc).find('#f_554, #f_555')
-						break;
-				}
-				for (let elem of texts) {
-					let jelem = $(elem)
-					let iter_button = button.clone()
-					iter_button.attr('for', jelem.attr('id'))
-					iter_button.click(function (e) {
-						let text_elem = $(doc).find(`#${e.target.getAttribute('for')}`)
-						let text = text_elem.prop('value')
-						text = text.replace(/\n+/g, ' ')
-						text_elem.prop('value', text)
-					})
-					jelem.before(iter_button)
-				}
-			}
-			observer.observe(document, {
-				attributes: false,
-				childList: true,
-				subtree: true
-			})
-		}
+	}
 
+	function showExpiryNextToCancellation() {
+		let expiry = doc.querySelector("#f_34").value;
+		let canc;
+		if (isCommercial()) {
+			canc = doc.querySelector("#f_471").parentElement.parentElement;
+		} else {
+			canc = doc.querySelector('#f_209').parentElement.parentElement;
+		}
+		if (!canc.dataset.mod) {
+			canc.innerHTML += `<span><i>Expiry: (${expiry})</i></span>`;
+			canc.dataset.mod = "true";
+		}
+	}
+
+	function findAndDisplayBrokerage() {
+		let title = doc.querySelector(".f-pcnm-legend");
+		if (!title.dataset.brokerage) {
+			let json_string = doc.querySelector("#hdnf_28").value;
+			title.dataset.brokerage = "true";
+			title.innerHTML += " | " + JSON.parse(json_string)[0].Name;
+		}
+	}
+
+	function reconnectObserver() {
+		observer.observe(document, {
+			attributes: false,
+			childList: true,
+			subtree: true
+		});
+	}
+
+	function disconnectObserver() {
+		observer.takeRecords();
+		observer.disconnect();
+	}
+
+	function removeDatePickersFromTabIndex() {
+		let pickers = doc.querySelectorAll('.datepick-trigger:not([tabindex="-1"])');
+		pickers.forEach(function (e) {
+			e.setAttribute('tabindex', '-1');
+		});
+	}
+
+	function checkRegionAndWarn() {
+		const boardAlias = { "F": "FVREB", "H": "CADREB", "N": "BCNREB" };
+		let region = doc.querySelector("#f_4").parentElement.parentElement.firstElementChild.firstElementChild.firstElementChild;
+		if (region) {
+			if (boardAlias[region.innerHTML[0]] && !region.dataset.hasWarned) {
+				alert(`Warning! This listing belongs to ${boardAlias[region.innerHTML[0]]}.\nYou can disable this warning in the extension settings.`);
+				region.dataset.hasWarned = "true";
+			}
+		}
 	}
 }
 
 // right click on listing grid to open actions
 function mouse_callback(e) {
-	if (hotkey_dict['maintain_context']) {
-		if ($(e.target).is('td') && $('#gbox_grid').length > 0) {
+	const isListingMaintContextEnabled = hotkey_dict['maintain_context'];
+	if (isListingMaintContextEnabled) {
+		const isSelectedElementTableData = $(e.target).is('td');
+		const canFindListingGrid = $('#gbox_grid').length > 0;
+		if (isSelectedElementTableData && canFindListingGrid) {
 			e.preventDefault()
-			console.log($(e.target.parentNode).find('[aria-describedby="grid_Action"] > a'))
-			$(e.target.parentNode).find('[aria-describedby="grid_Action"] > a')[0].click()
-			//$(e.target.parentNode).find('[aria-describedby="grid_Action"]').children().click()
+			const clickMoreActions = $(e.target.parentNode).find('[aria-describedby="grid_Action"] > a')[0].click();
+			clickMoreActions();
 		}
 	}
 }
@@ -309,143 +305,160 @@ function key_callback(e) {
 	// this log line to display hotkeys in console for debugging
 	//console.log(`${e.ctrlKey}+${e.shiftKey}+${e.key} | ${e.code}`)
 
-	// Ctrl+] to expand all containers
-	if (keyMatch('expand', e)) {
-		let target_frame = frameFinder(window.top, 'listingFrame').document
-		if (target_frame != false && typeof target_frame != "undefined") {
-			//console.log(target_frame)
-			var open = target_frame.querySelector(".f-form-openall")
-			open.click()
+	// constants go here
+	const shortcutIsExpand = keyMatch('expand', e);
+	const shortcutIsSaveListing = keyMatch('save', e);
+	const shortcutIsCollapse = keyMatch('collapse', e);
+	const shortcutIsFocusSearch = keyMatch('search', e);
+	const shortcutIsPrintListing = keyMatch('print', e);
+	const shortcutIsGoToListingMaintenance = keyMatch('goto_listings', e);
+	const shortcutIsTogglePrivacy = keyMatch('toggle_privacy', e);
+	const shortcutIsCloseTab = keyMatch('close_tab', e);
+	const shortcutIsCalculateCancellation = keyMatch('exp_calc', e);
+
+	if (shortcutIsExpand) {
+		expandAll();
+	}
+	if (shortcutIsCollapse) {
+		collapseAll();
+	}
+	if (shortcutIsFocusSearch) {
+		focusPowerSearch();
+	}
+	if (shortcutIsPrintListing) {
+		printListing();
+	}
+	if (shortcutIsSaveListing) {
+		saveListing();
+	}
+	if (shortcutIsGoToListingMaintenance) {
+		goToListingMaintenance();
+	}
+	if (shortcutIsTogglePrivacy) {
+		togglePrivacy();
+	}
+	if (shortcutIsCloseTab) {
+		closeTab();
+	}
+	if (shortcutIsCalculateCancellation) {
+		calculateCancellation();
+	}
+
+	function calculateCancellation() {
+		e.preventDefault();
+		let doc = getNestedFrame(window.top, 'listingFrame').document;
+		let canc;
+		let eff;
+		if (isCommercial()) {
+			canc = doc.querySelector("#f_471");
+			eff = doc.querySelector("#f_211");
+		} else {
+			canc = doc.querySelector("#f_209");
+			eff = doc.querySelector("#f_474");
+		}
+		if (eff.value.length == 10) {
+			let eff_array = eff.value.split('/');
+			eff_array.forEach((v, i) => { eff_array[i] = Number(v); });
+			let eff_date = new Date(eff_array[2], eff_array[0] - 1, eff_array[1]);
+			let new_date = eff_date;
+			new_date.setDate(eff_date.getDate() + 59);
+			//let new_date_string = `${new_date.getMonth() + 1}/${new_date.getDate()}/${new_date.getFullYear()}`
+			let new_date_string = numberPad(new_date);
+			// eff.innerHTML += `<span><i>+60 days: (${new_date_string})</i></span>`
+			canc.value = new_date_string;
 		}
 	}
 
-	// Ctrl+[ to collapse all containers
-	if (keyMatch('collapse', e)) {
-		e.preventDefault()
-		let target_frame = frameFinder(window.top, "listingFrame").document
-		if (target_frame != false && typeof target_frame != "undefined") {
-			var close = target_frame.querySelector(".f-form-closeall")
-			close.click()
+	function closeTab() {
+		e.preventDefault();
+		let lst = $(window.top.document).find('em[title="Close Tab"]:visible');
+		lst[lst.length - 1].click();
+	}
+
+	function togglePrivacy() {
+		e.preventDefault();
+		var frame = getNestedFrame(window.top, 'listingFrame').document;
+		var jframe = $(frame);
+		var select;
+		var name;
+		switch (document.location.hostname.split(".")[0]) {
+			case "bcres":
+				select = $(frame).find('#f_214');
+				name = $(frame).find('label[for="f_423"');
+				break;
+			case "bccls":
+				select = $(frame).find('#f_217');
+				name = $(frame).find('label[for="f_429"');
+				break;
+		}
+
+		if (['N', ''].includes(select.prop('value'))) {
+			select.prop('value', 'Y');
+			name.addClass('privacy');
+
+			jframe.find('.f-pcnm-legend').addClass('privacy-color');
+		} else if (select.prop('value') == 'Y') {
+			select.prop('value', '');
+			name.removeClass('privacy');
+			jframe.find('.f-pcnm-legend').removeClass('privacy-color');
 		}
 	}
 
-	// Ctrl+Shift+F to focus the Power Search bar
-	if (keyMatch('search', e)) {
-		e.preventDefault()
-		let field = window.top.document.querySelector(".select2-search__field")
-		field.click()
-		field.select()
+	function goToListingMaintenance() {
+		e.preventDefault();
+		window.top.document.querySelector('#listings-nav').click();
+		window.top.document.querySelector('#listings-nav + div').style.display = 'none';
+		window.top.document.querySelector('#listings-nav + div a[fullWindow="False"]').click();
+		window.top.document.querySelector('#listings-nav + div').style.display = 'block';
+		try {
+			window.top.document.querySelector('div#jGrowl').style.display = 'none';
+		} catch { }
 	}
 
-	// Ctrl+Q to print/download the current listing
-	if (keyMatch('print', e)) {
-		e.preventDefault()
-		if (frameFinder(window.top, "listingFrame")) {
-			e.preventDefault()
-			specialPrint()
-		}
-	}
-
-	// Ctrl+S to save listing
-	if (keyMatch('save', e)) {
-		if (frameFinder(window.top, 'listingFrame')) {
-			e.preventDefault()
-			frameFinder(window.top, 'listingFrame').document.querySelector('a#Save').click()
+	function saveListing() {
+		if (getNestedFrame(window.top, 'listingFrame')) {
+			e.preventDefault();
+			getNestedFrame(window.top, 'listingFrame').document.querySelector('a#Save').click();
 
 			// WIP code below to copy the ML# after saving.
 			/*
 			const dialog_watcher = new MutationObserver({$('td:contains("ML number")').select()})
 			*/
 		} else {
-			console.log("Couldn't find listingFrame")
+			console.log("Couldn't find listingFrame");
 		}
 	}
 
-	// F1 to open the Listing tab. Limited functionality.
-	if (keyMatch('goto_listings', e)) {
-		e.preventDefault()
-		window.top.document.querySelector('#listings-nav').click()
-		//$('#listings-nav').click()
-		window.top.document.querySelector('#listings-nav + div').style.display = 'none'
-		//$('#listings-nav + div').css('display','none')
-		window.top.document.querySelector('#listings-nav + div a[fullWindow="False"]').click()
-		//$('#listings-nav + div').css('display', 'block')
-		window.top.document.querySelector('#listings-nav + div').style.display = 'block'
-		//$('div#jGrowl').hide()
-		try {
-			window.top.document.querySelector('div#jGrowl').style.display = 'none'
-		} catch { }
-	}
-
-	// F2 to toggle privacy protection dropdown on a listing. Visual feedback still WIP.
-	if (keyMatch('toggle_privacy', e)) {
-		e.preventDefault()
-		var frame = frameFinder(window.top, 'listingFrame').document
-		var jframe = $(frame)
-		var select
-		var name
-		switch (document.location.hostname.split(".")[0]) {
-			case "bcres":
-				select = $(frame).find('#f_214')
-				name = $(frame).find('label[for="f_423"')
-				break;
-			case "bccls":
-				select = $(frame).find('#f_217')
-				name = $(frame).find('label[for="f_429"')
-				break;
-		}
-
-		if (['N', ''].includes(select.prop('value'))) {
-			select.prop('value', 'Y')
-			//flashTitle('Privacy Enabled')
-			//jframe.find('span:contains("Marketing Instructions")').click()
-			//alert("Privacy Enabled")
-			name.addClass('privacy')
-
-			jframe.find('.f-pcnm-legend').addClass('privacy-color')
-		} else if (select.prop('value') == 'Y') {
-			select.prop('value', '')
-			//flashTitle('Privacy Disabled')
-			//jframe.find('span:contains("Marketing Instructions")').click()
-			//alert("Privacy Enabled")
-			name.removeClass('privacy')
-			jframe.find('.f-pcnm-legend').removeClass('privacy-color')
+	function printListing() {
+		e.preventDefault();
+		if (getNestedFrame(window.top, "listingFrame")) {
+			e.preventDefault();
+			printReport();
 		}
 	}
 
-	// Shortcut to close tabs, starting with the current, most deeply nested tab
-	if (keyMatch('close_tab', e)) {
-		e.preventDefault()
-		let jframe = $(frameFinder(window.top, 'listingFrame'))
-		let lst = $(window.top.document).find('em[title="Close Tab"]:visible')
-		lst[lst.length - 1].click()
-
+	function focusPowerSearch() {
+		e.preventDefault();
+		let field = window.top.document.querySelector(".select2-search__field");
+		field.click();
+		field.select();
 	}
 
-	// Shortcut to calculate 60 days from the cancel effective date and place
-	// the value in the cancellation expiry date.
-	if (keyMatch('exp_calc', e)) {
-		e.preventDefault()
-		let doc = frameFinder(window.top, 'listingFrame').document
-		let canc
-		let eff
-		if (isCommercial()) {
-			canc = doc.querySelector("#f_471")
-			eff = doc.querySelector("#f_211")
-		} else {
-			canc = doc.querySelector("#f_209")
-			eff = doc.querySelector("#f_474")
+	function collapseAll() {
+		e.preventDefault();
+		let target_frame = getNestedFrame(window.top, "listingFrame").document;
+		if (target_frame != false && typeof target_frame != "undefined") {
+			var close = target_frame.querySelector(".f-form-closeall");
+			close.click();
 		}
-		if (eff.value.length == 10) {
-			let eff_array = eff.value.split('/')
-			eff_array.forEach((v, i) => { eff_array[i] = Number(v) })
-			let eff_date = new Date(eff_array[2], eff_array[0] - 1, eff_array[1])
-			let new_date = eff_date
-			new_date.setDate(eff_date.getDate() + 59)
-			//let new_date_string = `${new_date.getMonth() + 1}/${new_date.getDate()}/${new_date.getFullYear()}`
-			let new_date_string = numberPad(new_date)
-			// eff.innerHTML += `<span><i>+60 days: (${new_date_string})</i></span>`
-			canc.value = new_date_string
+	}
+
+	function expandAll() {
+		let target_frame = getNestedFrame(window.top, 'listingFrame').document;
+		if (target_frame != false && typeof target_frame != "undefined") {
+			//console.log(target_frame)
+			var open = target_frame.querySelector(".f-form-openall");
+			open.click();
 		}
 	}
 }
