@@ -487,7 +487,7 @@ function key_callback(e) {
 		var rootWindow = getRootWindow(window);
 		var assume_menu_link = getRootWindow(window).document.querySelector("#lnkAssume");
 		assume_menu_link.click();
-		window.setTimeout(() => { focusFindField(window) }, 500)
+		window.setTimeout(() => { focusFindField(window) }, 1000)
 	}
 }
 
