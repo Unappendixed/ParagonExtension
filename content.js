@@ -20,7 +20,8 @@ chrome.storage.local.get({
 	goto_listings: { ctrl: false, alt: false, shift: false, key: 'F1', code: 'F1' },
 	toggle_privacy: { ctrl: false, alt: false, shift: false, key: 'F2', code: 'F2' },
 	close_tab: { ctrl: false, alt: true, shift: false, key: '\`', code: 'Backquote' },
-	exp_calc: { ctrl: false, alt: false, shift: false, key: 'F3', code: 'F3' }
+	exp_calc: { ctrl: false, alt: false, shift: false, key: 'F3', code: 'F3' },
+	goto_assume: { ctrl: false, alt: false, shift: false, key: 'F4', code: 'F4' }
 }, function (items) {
 	Object.keys(items).forEach(function (key, index) { hotkey_dict[key] = items[key] })
 })
@@ -132,6 +133,18 @@ function getNestedElement(start, target) {
 	}
 }
 
+function getRootWindow(window, depth = 0) {
+	if (!window) { return "Did not find window" }
+	if (window.parent == window) {
+		return window;
+	} else if (depth > 20) {
+		return null
+	} else {
+		depth++
+		return getRootWindow(window.parent, depth);
+	}
+}
+
 // function to create/invoke hidden iframe and print
 function printReport() {
 	// Creates an invisible iframe of the report view of the current listing and prints the
@@ -175,7 +188,7 @@ function dom_callback(mutation_list, observer) {
 
 	if (!frame) { return } // guard clause
 	let doc = frame.document
-	
+
 	// place constants here
 	const canFindAreaField = doc.querySelector("#f_4") ?? false;
 	const shouldWarnRegion = hotkey_dict["region_warning"];
@@ -316,6 +329,7 @@ function key_callback(e) {
 	const shortcutIsTogglePrivacy = keyMatch('toggle_privacy', e);
 	const shortcutIsCloseTab = keyMatch('close_tab', e);
 	const shortcutIsCalculateCancellation = keyMatch('exp_calc', e);
+	const shortcutIsGoToAssumeIdentity = keyMatch('goto_assume', e);
 
 	if (shortcutIsExpand) {
 		expandAll();
@@ -344,7 +358,9 @@ function key_callback(e) {
 	if (shortcutIsCalculateCancellation) {
 		calculateCancellation();
 	}
-
+	if (shortcutIsGoToAssumeIdentity) {
+		goToAssumeIdentity();
+	}
 	function calculateCancellation() {
 		e.preventDefault();
 		let doc = getNestedFrame(window.top, 'listingFrame').document;
@@ -461,6 +477,17 @@ function key_callback(e) {
 			var open = target_frame.querySelector(".f-form-openall");
 			open.click();
 		}
+	}
+
+	function goToAssumeIdentity() {
+
+		function focusFindField(window) {
+			window.document.querySelector("#search_cd").focus();
+		}
+		var rootWindow = getRootWindow(window);
+		var assume_menu_link = getRootWindow(window).document.querySelector("#lnkAssume");
+		assume_menu_link.click();
+		window.setTimeout(() => { focusFindField(window) }, 500)
 	}
 }
 
