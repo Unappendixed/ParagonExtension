@@ -481,18 +481,19 @@ function key_callback(e) {
 
 	function goToAssumeIdentity() {
 		function focusFindField(window) {
-			window.document.querySelector("#search_cd").focus();
+			try {
+				window.document.querySelector("#search_cd").focus();
+			} catch (e) {
+				if (!e instanceof TypeError) {
+					throw e;
+				}
+			}
 		}
 		var rootWindow = getRootWindow(window);
 		var assume_menu_link = getRootWindow(window).document.querySelector("#lnkAssume");
 		assume_menu_link.click();
-		try {
-			window.setTimeout(() => { focusFindField(window) }, 1000)
-		} catch (e) {
-			if (!e instanceof TypeError) {
-				throw e;
-			}
-		}
+		window.setTimeout(() => { focusFindField(window) }, 1000)
+
 	}
 }
 
