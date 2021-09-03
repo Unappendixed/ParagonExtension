@@ -480,14 +480,19 @@ function key_callback(e) {
 	}
 
 	function goToAssumeIdentity() {
-
 		function focusFindField(window) {
 			window.document.querySelector("#search_cd").focus();
 		}
 		var rootWindow = getRootWindow(window);
 		var assume_menu_link = getRootWindow(window).document.querySelector("#lnkAssume");
 		assume_menu_link.click();
-		window.setTimeout(() => { focusFindField(window) }, 1000)
+		try {
+			window.setTimeout(() => { focusFindField(window) }, 1000)
+		} catch (e) {
+			if (!e instanceof TypeError) {
+				throw e;
+			}
+		}
 	}
 }
 
