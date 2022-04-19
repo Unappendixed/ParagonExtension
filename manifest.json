@@ -15,14 +15,14 @@
         "default_title": "Options"
     },
     "background": {
-        "scripts": ["background.js"],
+        "scripts": ["./build/background.js"],
         "persistent": true
     },
     "content_scripts": [
             {
                 "matches": ["https://*.paragonrels.com/*"],
                 "all_frames": true,
-                "js": ["jquery-3.4.1.js", "content.js"]
+                "js": ["./public/jquery-3.4.1.js", "./build/content.js"]
             }
         ]
 }
