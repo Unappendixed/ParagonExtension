@@ -5,7 +5,7 @@ type KeyDictionary = {
 	key: string;
 };
 
-function setPresetStyle(element: HTMLElement, preset: "focus" | "unfocus"): void {
+function assignPresetStyle(element: HTMLElement, preset: "focus" | "unfocus"): void {
   var style: Object;
 	if (preset == "focus") {
 		style = {
@@ -129,10 +129,10 @@ document.addEventListener("load", function () {
 					const buttonWrapElement: HTMLElement = document.querySelector("#button_wrap");
 					if (items["toggle"] == false) {
 						toggleAllInput.checked = false;
-            setPresetStyle(buttonWrapElement, 'unfocus');
+            assignPresetStyle(buttonWrapElement, 'unfocus');
 					} else {
             toggleAllInput.checked = true;
-            setPresetStyle(buttonWrapElement, 'focus');
+            assignPresetStyle(buttonWrapElement, 'focus');
 					}
 				});
 			}
@@ -183,10 +183,10 @@ document.addEventListener("load", function () {
 		hotkey_dict["toggle"] = toggleInput.checked;
     const buttonWrapElement: HTMLElement = document.querySelector("#button_wrap");
 		if (hotkey_dict["toggle"] == false) {
-      setPresetStyle(buttonWrapElement, 'unfocus');
+      assignPresetStyle(buttonWrapElement, 'unfocus');
 			chrome.storage.local.set({ toggle: false });
 		} else {
-      setPresetStyle(buttonWrapElement, 'focus');
+      assignPresetStyle(buttonWrapElement, 'focus');
 			chrome.storage.local.set({ toggle: true });
 		}
 	};
