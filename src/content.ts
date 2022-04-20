@@ -59,8 +59,11 @@ function keyMatch(id: string, event: KeyboardEvent) {
   if (typeof currentHotkey == "boolean" || typeof currentHotkey == "string") {
     return null;
   }
-  const doesKeyMatch = event.ctrlKey == currentHotkey.ctrl;
-  event.altKey == currentHotkey.alt && event.shiftKey == currentHotkey.shift && event.code == currentHotkey.code;
+  const doesKeyMatch =
+    event.ctrlKey == currentHotkey.ctrl &&
+    event.altKey == currentHotkey.alt &&
+    event.shiftKey == currentHotkey.shift &&
+    event.code == currentHotkey.code;
   if (doesKeyMatch) {
     return true;
   } else {
@@ -601,7 +604,7 @@ document.addEventListener("load", function () {
   const privacyStyleObj = document.createElement("style");
   const buttonStyle = `<style>.whitespace_button {float:left;clear:left;display:inline-block;margin-left:120px;}</style>`;
   const privacyStyle = `<style>.privacy {font-weight:bold;text-decoration:underline}.privacy-color {background:goldenrod}</style>`;
-  
+
   buttonStyleObj.innerText = buttonStyle;
   privacyStyleObj.innerText = privacyStyle;
 
