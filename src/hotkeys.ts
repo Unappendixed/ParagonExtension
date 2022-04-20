@@ -1,12 +1,6 @@
-type KeyDictionary = {
-	ctrl: boolean;
-	alt: boolean;
-	shift: boolean;
-	key: string;
-};
-
+import { KeyDictionary, SettingsObj } from './types';
 function assignPresetStyle(element: HTMLElement, preset: "focus" | "unfocus"): void {
-  var style: Object;
+  var style: Object = {};
 	if (preset == "focus") {
 		style = {
 			opacity: "0.2",
@@ -120,7 +114,7 @@ document.addEventListener("load", function () {
 			},
 			function (items) {
 				Object.keys(items).forEach(function (key, index) {
-					hotkey_dict[key] = items[key];
+					hotkey_dict[key as keyof SettingsObj] = items[key];
 					if (typeof items[key] == "object") {
 						const keyInput: HTMLInputElement = document.querySelector(`#${key}`);
 						keyInput.value = dictToString(items[key]);
