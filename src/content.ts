@@ -1,9 +1,9 @@
-import { KeyDictionary, SettingsObj } from './types';
+import { KeyDictionary, SettingsObj } from "./types";
 
-"use strict";
+("use strict");
 
 // Associative array to hold user preferences
-var hotkey_dict: SettingsObj ;
+var hotkey_dict: SettingsObj;
 
 // Load user hotkeys into array.
 chrome.storage.local.get(
@@ -45,7 +45,8 @@ function isCommercial() {
  * @param {Event} event Event object.
  * @return {Boolean} Returns true if the keypresses match user's keybinds, false otherwise.
  */
-function keyMatch(id: string, event: Function) {
+function keyMatch(id: string, event: KeyboardEvent) {
+  const settings_id = id as keyof SettingsObj;
   const areKeysDisabledGlobal = hotkey_dict["toggle"] == false;
   if (areKeysDisabledGlobal) {
     return false;
@@ -54,11 +55,12 @@ function keyMatch(id: string, event: Function) {
   if (isKeyDisabled) {
     return false;
   }
-  const doesKeyMatch =
-    event.ctrlKey == hotkey_dict[id]["ctrl"] &&
-    event.altKey == hotkey_dict[id]["alt"] &&
-    event.shiftKey == hotkey_dict[id]["shift"] &&
-    event.code == hotkey_dict[id]["code"];
+  const currentHotkey = hotkey_dict[settings_id];
+  if (typeof currentHotkey == "boolean" || typeof currentHotkey == "string") {
+    return null;
+  }
+  const doesKeyMatch = event.ctrlKey == currentHotkey.ctrl;
+  event.altKey == currentHotkey.alt && event.shiftKey == currentHotkey.shift && event.code == currentHotkey.code;
   if (doesKeyMatch) {
     return true;
   } else {
@@ -66,7 +68,7 @@ function keyMatch(id: string, event: Function) {
   }
 }
 
-function numberPad(date) {
+function numberPad(date: Date) {
   let day = String(date.getDate());
   if (day.length == 1) {
     day = "0" + day;
@@ -79,18 +81,21 @@ function numberPad(date) {
 }
 
 /** Helper function to find nested iframes. Recursive.
- * @param {object} start DOMElement to start searching from.
- * @param {object} target iframe element to search for.
+ * @param {Window} start DOMElement to start searching from.
+ * @param {string} target the id of the iframe element to search for.
  */
-function getNestedFrame(start, target) {
+function getNestedFrame(start: Window, target: string): HTMLIFrameElement | boolean {
   // Helper function that recursively loops through DOM, starting at <start>, searching for an
   // iframe that matches <target> css selector.
   var result;
   if (start.frames.length) {
     for (let ind = 0; ind < start.frames.length; ind++) {
       let i = start.frames[ind];
+      if (i.frameElement === null) {
+        throw new Error("Index out of range");
+      }
       if (i.frameElement.id == target) {
-        result = i;
+        result = i.frameElement as HTMLIFrameElement;
       } else {
         if (i.frames.length > 0) {
           let temp_result = getNestedFrame(i, target);
@@ -102,53 +107,19 @@ function getNestedFrame(start, target) {
     }
     if (result) {
       return result;
-    } else {
-      return false;
     }
   }
+  return false;
 }
 
-// Recursively find elements through frames. Returns a list of elements matching the target CSS
-// selector, starting from the target.
-// BROKEN -- TODO
-function getNestedElement(start, target) {
-  console.log(start);
-  var result_list = [];
-  for (let i of start.children) {
-    let j = document.querySelector(i);
-    if (j.is(target)) {
-      result_list.push(i);
-    }
-    if (j.is("iframe")) {
-      let temp_result = getNestedElement(i.contentDocument, target);
-      if (temp_result != false) {
-        result_list = result_list.concat(temp_result);
-      }
-    }
-    if (i.children.length > 0) {
-      let temp_result = getNestedElement(i, target);
-      if (temp_result != false) {
-        result_list = result_list.concat(temp_result);
-      }
-    }
-  }
-  if (result_list.length > 1) {
-    return result_list;
-  } else if (result_list.length == 1) {
-    return result_list[0];
-  } else {
-    return false;
-  }
-}
-
-function getRootWindow(window, depth = 0) {
+function getRootWindow(window: Window, depth: number = 0): Window | boolean {
   if (!window) {
-    return "Did not find window";
+    return false;
   }
   if (window.parent == window) {
     return window;
   } else if (depth > 20) {
-    return null;
+    return false;
   } else {
     depth++;
     return getRootWindow(window.parent, depth);
@@ -160,16 +131,18 @@ function printReport() {
   // Creates an invisible iframe of the report view of the current listing and prints the
   // report. Only works on the listing maintenance screen, and the listing must already be
   // saved.
-  var hidden_frame: HTMLIFrameElement;
+  var hidden_frame: HTMLIFrameElement | null;
   hidden_frame = document.querySelector<HTMLIFrameElement>("#print-frame");
-  if (hidden_frame) {
+  if (hidden_frame && hidden_frame.parentElement) {
     hidden_frame.parentElement.removeChild(hidden_frame);
   }
-  var listing_pane_window = getNestedFrame(window.top, "listingFrame");
-  if (listing_pane_window == false) {
-    return;
+  if (window.top === null) {
+    throw new ReferenceError("I literally don't know how it's possible for this error to be reached, so... good job.");
   }
-  var listing_pane = listing_pane_window.frameElement;
+  var listing_pane = getNestedFrame(window.top, "listingFrame");
+  if (listing_pane == false || typeof listing_pane == "boolean") {
+    throw new ReferenceError("Failed to find listing maintenance iFrame");
+  }
   var listing_id = listing_pane.src.match(/Listing\/(.*?)\?listing/);
   if (!listing_id) {
     alert("Can't print unsaved listing.");
@@ -186,21 +159,30 @@ function printReport() {
   hidden_frame.src = iframe_src;
   hidden_frame.id = "print-frame";
   document.body.appendChild(hidden_frame);
+  if (!hidden_frame.contentWindow) {
+    throw new ReferenceError("Failed to access hidden iframe's content window.");
+  }
   hidden_frame.contentWindow.print();
 }
 
 // Tweaks that need to intercept the DOM go here.
-function dom_callback(mutation_list, observer) {
-  const isBannerInMutationList = mutation_list.every((e) => e.target.id == "app_banner_session");
+function dom_callback(mutationList: MutationRecord[], observer: MutationObserver) {
+  if (window.top === null) {
+    throw new ReferenceError("the sky is falling");
+  }
+  const isBannerInMutationList = mutationList.every((e) => (e.target as HTMLElement).id == "app_banner_session");
   if (isBannerInMutationList) {
     return;
   }
   let frame = getNestedFrame(window.top, "listingFrame");
 
-  if (!frame) {
+  if (!(frame instanceof HTMLIFrameElement)) {
     return;
   } // guard clause
-  let doc = frame.document;
+  let doc = frame.contentDocument;
+  if (doc === null) {
+    return;
+  }
 
   // place constants here
   const canFindAreaField = doc.querySelector("#f_4") ?? false;
@@ -214,55 +196,81 @@ function dom_callback(mutation_list, observer) {
 
   disconnectObserver();
   if (shouldWarnRegion && canFindAreaField) {
-    checkRegionAndWarn();
+    checkRegionAndWarn(doc);
   }
   if (shouldFixTabIndex) {
-    removeDatePickersFromTabIndex();
+    removeDatePickersFromTabIndex(doc);
   }
   if (shouldDisplayBrokerage && canFindBrokerageField) {
-    findAndDisplayBrokerage();
+    findAndDisplayBrokerage(doc);
   }
   if (shouldShowExpiryNextToCancellation && canFindCancellationField) {
-    showExpiryNextToCancellation();
+    showExpiryNextToCancellation(doc);
   }
   if (shouldShowRemoveBreakButtons) {
-    createRemoveBreakButtons();
+    createRemoveBreakButtons(doc);
   }
   reconnectObserver();
 
-  function createRemoveBreakButtons() {
-    let button = document.querySelector('<button type="button" class="whitespace_button" tabindex="-1">Remove Breaks</button>');
-    if (document.querySelector(doc).find(".whitespace_button").length == 0) {
-      var texts: HTMLElement[];
+  function createRemoveBreakButtons(doc: Document) {
+    // let button = document.querySelector(
+    //   '<button type="button" class="whitespace_button" tabindex="-1">Remove Breaks</button>'
+    // );
+    const button = document.createElement("button");
+    button.setAttribute("type", "button");
+    button.setAttribute("class", "whitespace-button");
+    button.setAttribute("tabindex", "-1");
+    button.textContent = "Remove Breaks";
+
+    const existingWhitespaceButton = doc.querySelectorAll<HTMLElement>(".whitespace-button").length == 0;
+    if (existingWhitespaceButton) {
+      var texts: NodeListOf<HTMLElement>;
       switch (document.location.hostname.split(".")[0]) {
         case "bcres":
-          texts = document.querySelector(doc).find("#f_550, #f_551, #f_552");
+          texts = doc.querySelectorAll<HTMLElement>("#f_550, #f_551, #f_552");
           break;
         case "bccls":
-          texts = document.querySelector(doc).find("#f_554, #f_555");
+          texts = doc.querySelectorAll<HTMLElement>("#f_554, #f_555");
           break;
+        default:
+          return;
       }
       for (let elem of texts) {
         let iter_button: HTMLElement = button.cloneNode() as HTMLElement;
-        iter_button.setAttribute('for', elem.id);
-        iter_button.addEventListener('click', function (args: MouseEvent) {
-          let text_elem = document.querySelector(doc).find(`#${(args.target as HTMLElement).getAttribute('for')}`);
-          let text = text_elem.prop("value");
-          text = text.replace(/\n+/g, " ");
-          text_elem.prop("value", text);
+        iter_button.setAttribute("for", elem.id);
+        iter_button.addEventListener("click", function (args: MouseEvent) {
+          if (doc === null) {
+            throw new ReferenceError("Listing maintenance iframe is null");
+          }
+          let text_elem = doc.querySelector<HTMLElement>(`#${(args.target as HTMLElement).getAttribute("for")}`);
+          if (text_elem === null) {
+            throw new ReferenceError("Can't find text box connected to clicked button.");
+          }
+          let text = text_elem.getAttribute("value");
+          if (text) {
+            text = text.replace(/\n+/g, " ");
+            text_elem.setAttribute("value", text);
+          }
         });
         elem.before(iter_button);
       }
     }
   }
 
-  function showExpiryNextToCancellation() {
-    let expiry = doc.querySelector("#f_34").value;
-    let canc;
+  function showExpiryNextToCancellation(doc: Document) {
+    let expiryElement = doc.querySelector<HTMLInputElement>("#f_34");
+    if (expiryElement === null) {
+      return;
+    }
+    const expiry = expiryElement.value;
+    var canc;
     if (isCommercial()) {
-      canc = doc.querySelector("#f_471").parentElement.parentElement;
+      canc = doc.querySelector("#f_471")?.parentElement?.parentElement;
     } else {
-      canc = doc.querySelector("#f_209").parentElement.parentElement;
+      canc = doc.querySelector("#f_209")?.parentElement?.parentElement;
+    }
+    if (canc === null || canc === undefined) {
+      throw new ReferenceError("Cancellation date field not found.");
     }
     if (!canc.dataset.mod) {
       canc.innerHTML += `<span><i>Expiry: (${expiry})</i></span>`;
@@ -270,10 +278,16 @@ function dom_callback(mutation_list, observer) {
     }
   }
 
-  function findAndDisplayBrokerage() {
-    let title = doc.querySelector(".f-pcnm-legend");
+  function findAndDisplayBrokerage(doc: Document) {
+    let title = doc.querySelector<HTMLElement>(".f-pcnm-legend");
+    if (title === null) {
+      throw new ReferenceError("Frame header not found.");
+    }
     if (!title.dataset.brokerage) {
-      let json_string = doc.querySelector("#hdnf_28").value;
+      let json_string = doc.querySelector<HTMLInputElement>("#hdnf_28")?.value;
+      if (json_string === undefined) {
+        throw new ReferenceError("Unable to get brokerage name.");
+      }
       title.dataset.brokerage = "true";
       title.innerHTML += " | " + JSON.parse(json_string)[0].Name;
     }
@@ -292,22 +306,22 @@ function dom_callback(mutation_list, observer) {
     observer.disconnect();
   }
 
-  function removeDatePickersFromTabIndex() {
+  function removeDatePickersFromTabIndex(doc: Document) {
     let pickers = doc.querySelectorAll('.datepick-trigger:not([tabindex="-1"])');
     pickers.forEach(function (e) {
       e.setAttribute("tabindex", "-1");
     });
   }
 
-  function checkRegionAndWarn() {
+  function checkRegionAndWarn(doc: Document) {
     const boardAlias = { F: "FVREB", H: "CADREB", N: "BCNREB" };
-    let region =
-      doc.querySelector("#f_4").parentElement.parentElement.firstElementChild.firstElementChild.firstElementChild;
+    let region = doc.querySelector<HTMLElement>("#f_4")?.parentElement?.parentElement?.firstElementChild
+      ?.firstElementChild?.firstElementChild as HTMLElement;
     if (region) {
-      if (boardAlias[region.innerHTML[0]] && !region.dataset.hasWarned) {
+      if (boardAlias[region.innerHTML[0] as keyof Object] && !region.dataset.hasWarned) {
         alert(
           `Warning! This listing belongs to ${
-            boardAlias[region.innerHTML[0]]
+            boardAlias[region.innerHTML[0] as keyof Object]
           }.\nYou can disable this warning in the extension settings.`
         );
         region.dataset.hasWarned = "true";
@@ -317,22 +331,26 @@ function dom_callback(mutation_list, observer) {
 }
 
 // right click on listing grid to open actions
-function mouse_callback(e) {
+function mouse_callback(e: MouseEvent) {
+  const source = e.target as HTMLElement;
   const isListingMaintContextEnabled = hotkey_dict["maintain_context"];
   if (isListingMaintContextEnabled) {
-    const isSelectedElementTableData = document.querySelector(e.target).is("td");
+    const isSelectedElementTableData = source.tagName === "td";
     const canFindListingGrid = document.querySelectorAll("#gbox_grid").length > 0;
     if (isSelectedElementTableData && canFindListingGrid) {
       e.preventDefault();
-      const clickMoreActions = document.querySelector(e.target.parentNode).find('[aria-describedby="grid_Action"] > a')[0].click();
-      clickMoreActions();
+      const parent = source.parentElement as HTMLElement;
+      const target = parent.querySelector<HTMLElement>('[aria-describedby="grid_Action"] > a');
+      if (target) {
+        target.click();
+      }
     }
   }
 }
 
 // All hotkeys wrapped in a callback.
 // TODO - This block might benefit from increased modularity.
-function key_callback(e) {
+function key_callback(e: KeyboardEvent) {
   // this log line to display hotkeys in console for debugging
   //console.log(`${e.ctrlKey}+${e.shiftKey}+${e.key} | ${e.code}`)
 
@@ -380,9 +398,15 @@ function key_callback(e) {
   }
   function calculateCancellation() {
     e.preventDefault();
-    let doc = getNestedFrame(window.top, "listingFrame").document;
-    let canc;
-    let eff;
+    if (window.top === null) {
+      throw new ReferenceError("The top window is null... somehow");
+    }
+    let doc = getNestedFrame(window.top, "listingFrame");
+    if (typeof doc === "boolean") {
+      throw new ReferenceError("Listing maintenance frame cannot be null");
+    }
+    let canc: HTMLInputElement | null;
+    let eff: HTMLInputElement | null;
     if (isCommercial()) {
       canc = doc.querySelector("#f_471");
       eff = doc.querySelector("#f_211");
@@ -390,12 +414,16 @@ function key_callback(e) {
       canc = doc.querySelector("#f_209");
       eff = doc.querySelector("#f_474");
     }
-    if (eff.value.length == 10) {
-      let eff_array = eff.value.split("/");
-      eff_array.forEach((v, i) => {
-        eff_array[i] = Number(v);
+    if (eff === null || canc === null) {
+      throw new ReferenceError("Couldn't get effective cancellation date field.");
+    }
+    if (eff?.value.length == 10) {
+      let effArrayStrings: string[] = eff.value.split("/");
+      let effArrayNums: number[] = [];
+      effArrayStrings.forEach((v, i) => {
+        effArrayNums[i] = Number(v);
       });
-      let eff_date = new Date(eff_array[2], eff_array[0] - 1, eff_array[1]);
+      let eff_date = new Date(effArrayNums[2], effArrayNums[0] - 1, effArrayNums[1]);
       let new_date = eff_date;
       new_date.setDate(eff_date.getDate() + 59);
       //let new_date_string = `${new_date.getMonth() + 1}/${new_date.getDate()}/${new_date.getFullYear()}`
@@ -407,66 +435,102 @@ function key_callback(e) {
 
   function closeTab() {
     e.preventDefault();
-    let lst: NodeListOf<HTMLElement> = window.top.document.querySelectorAll<HTMLElement>('em[title="Close Tab"]:visible');
+    if (window.top === null) {
+      throw new ReferenceError("top window not found i guess");
+    }
+    let lst: NodeListOf<HTMLElement> = window.top.document.querySelectorAll<HTMLElement>(
+      'em[title="Close Tab"]:visible'
+    );
     lst[lst.length - 1].click();
   }
 
   function togglePrivacy() {
     e.preventDefault();
-    var frame = getNestedFrame(window.top, "listingFrame").document;
-    var jframe = document.querySelector(frame);
-    var select;
-    var name;
+    if (window.top === null) {
+      throw new ReferenceError("window.top is null");
+    }
+    var frame = getNestedFrame(window.top, "listingFrame");
+    if (typeof frame === "boolean") {
+      throw new ReferenceError("Failed to find nested listing frame element.");
+    }
+    var select: HTMLInputElement | null = null;
+    var name: HTMLInputElement | null = null;
     switch (document.location.hostname.split(".")[0]) {
       case "bcres":
-        select = document.querySelector(frame).find("#f_214");
-        name = document.querySelector(frame).find('label[for="f_423"');
+        select = frame.querySelector<HTMLInputElement>("#f_214");
+        name = frame.querySelector('label[for="f_423"');
         break;
       case "bccls":
-        select = document.querySelector(frame).find("#f_217");
-        name = document.querySelector(frame).find('label[for="f_429"');
+        select = frame.querySelector<HTMLInputElement>("#f_217");
+        name = frame.querySelector('label[for="f_429"');
         break;
     }
 
-    if (["N", ""].includes(select.prop("value"))) {
-      select.prop("value", "Y");
-      name.addClass("privacy");
+    if (select === null || select === undefined) {
+      throw new ReferenceError("privacy toggle element could not be found");
+    }
+    if (name === null) {
+      throw new ReferenceError("owner name field element could not be found");
+    }
 
-      jframe.find(".f-pcnm-legend").addClass("privacy-color");
-    } else if (select.prop("value") == "Y") {
-      select.prop("value", "");
-      name.removeClass("privacy");
-      jframe.find(".f-pcnm-legend").removeClass("privacy-color");
+    if (["N", ""].includes(select.value)) {
+      select.setAttribute("value", "Y");
+      name.classList.add("privacy");
+
+      frame.querySelector(".f-pcnm-legend")?.setAttribute("class", "privacy-color");
+    } else if (select.getAttribute("value") == "Y") {
+      select.setAttribute("value", "");
+      name.classList.remove("privacy");
     }
   }
 
   function goToListingMaintenance() {
     e.preventDefault();
-    window.top.document.querySelector<HTMLElement>("#listings-nav").click();
-    window.top.document.querySelector<HTMLElement>("#listings-nav + div").style.display = "none";
-    window.top.document.querySelector<HTMLElement>('#listings-nav + div a[fullWindow="False"]').click();
-    window.top.document.querySelector<HTMLElement>("#listings-nav + div").style.display = "block";
+    if (window.top === null) {
+      throw new ReferenceError("Top window is null");
+    }
+    const targetDocument = window.top.document;
+    targetDocument.querySelector<HTMLElement>("#listings-nav")?.click();
+    const navElement = targetDocument.querySelector<HTMLElement>("#listings-nav + div");
+    if (navElement === null) {
+      throw new ReferenceError("Navigation element could not be found");
+    }
+    navElement.style.display = "none";
+    targetDocument.querySelector<HTMLElement>('#listings-nav + div a[fullWindow="False"]')?.click();
+    navElement.style.display = "block";
     try {
-      window.top.document.querySelector<HTMLElement>("div#jGrowl").style.display = "none";
+      const growlElement = targetDocument.querySelector<HTMLElement>("div#jGrowl");
+      if (growlElement === null) {
+        return;
+      }
+      growlElement.style.display = "none";
     } catch {}
   }
 
   function saveListing() {
+    if (window.top === null) {
+      throw new ReferenceError("top window element is null");
+    }
     if (getNestedFrame(window.top, "listingFrame")) {
       e.preventDefault();
-      getNestedFrame(window.top, "listingFrame").document.querySelector("a#Save").click();
+      const frame = getNestedFrame(window.top, "listingFrame");
+      if (!(frame instanceof HTMLIFrameElement)) {
+        throw new ReferenceError("listing maintenance frame could not be found");
+      }
+      frame.querySelector<HTMLElement>("a#Save")?.click();
 
       // WIP code below to copy the ML# after saving.
       /*
       const dialog_watcher = new MutationObserver({$('td:contains("ML number")').select()})
       */
-    } else {
-      console.log("Couldn't find listingFrame");
     }
   }
 
   function printListing() {
     e.preventDefault();
+    if (window.top === null) {
+      throw new ReferenceError("top window element could not be found");
+    }
     if (getNestedFrame(window.top, "listingFrame")) {
       e.preventDefault();
       printReport();
@@ -475,33 +539,42 @@ function key_callback(e) {
 
   function focusPowerSearch() {
     e.preventDefault();
+    if (window.top === null) {
+      throw new ReferenceError("top window element could not be found");
+    }
     let field = window.top.document.querySelector<HTMLElement>(".select2-search__field");
-    field.click();
-    field.focus();
+    field?.click();
+    field?.focus();
   }
 
   function collapseAll() {
     e.preventDefault();
-    let target_frame = getNestedFrame(window.top, "listingFrame").document;
-    if (target_frame != false && typeof target_frame != "undefined") {
-      var close = target_frame.querySelector(".f-form-closeall");
-      close.click();
+    if (window.top === null) {
+      throw new ReferenceError("top window is null");
+    }
+    let targetFrame = getNestedFrame(window.top, "listingFrame");
+    if (targetFrame instanceof HTMLIFrameElement) {
+      var close = targetFrame.querySelector<HTMLElement>(".f-form-closeall");
+      close?.click();
     }
   }
 
   function expandAll() {
-    let target_frame = getNestedFrame(window.top, "listingFrame").document;
-    if (target_frame != false && typeof target_frame != "undefined") {
+    if (window.top === null) {
+      throw new ReferenceError("top window element is null");
+    }
+    let targetFrame = getNestedFrame(window.top, "listingFrame");
+    if (targetFrame instanceof HTMLIFrameElement) {
       //console.log(target_frame)
-      var open = target_frame.querySelector(".f-form-openall");
-      open.click();
+      var open = targetFrame.querySelector<HTMLElement>(".f-form-openall");
+      open?.click();
     }
   }
 
   function goToAssumeIdentity() {
-    function focusFindField(window) {
+    function focusFindField(window: Window) {
       try {
-        window.document.querySelector("#search_cd").focus();
+        window?.document?.querySelector<HTMLElement>("#search_cd")?.focus();
       } catch (e: any) {
         if (!(e instanceof TypeError)) {
           throw e;
@@ -509,23 +582,30 @@ function key_callback(e) {
       }
     }
     var rootWindow = getRootWindow(window);
-    var assume_menu_link = getRootWindow(window).document.querySelector("#lnkAssume");
-    assume_menu_link.click();
+    var rootDocument: Document | null = null;
+    if (rootWindow instanceof Window) {
+      rootDocument = rootWindow.document;
+    }
+    var assumeMenuLink: HTMLElement | null = null;
+    if (rootDocument instanceof Document) assumeMenuLink = rootDocument.querySelector("#lnkAssume");
+    assumeMenuLink?.click();
     window.setTimeout(() => {
       focusFindField(window);
     }, 1000);
   }
 }
 
-document.addEventListener('load', function () {
+document.addEventListener("load", function () {
   // injecting a few simple styles to reference in above functions
-  var button_style = document.querySelector(
-    `<style>.whitespace_button {float:left;clear:left;display:inline-block;margin-left:120px;}</style>`
-  );
-  var privacy_style = document.querySelector(
-    `<style>.privacy {font-weight:bold;text-decoration:underline}.privacy-color {background:goldenrod}</style>`
-  );
-  document.querySelector("head").append(button_style, privacy_style);
+  const buttonStyleObj = document.createElement("style");
+  const privacyStyleObj = document.createElement("style");
+  const buttonStyle = `<style>.whitespace_button {float:left;clear:left;display:inline-block;margin-left:120px;}</style>`;
+  const privacyStyle = `<style>.privacy {font-weight:bold;text-decoration:underline}.privacy-color {background:goldenrod}</style>`;
+  
+  buttonStyleObj.innerText = buttonStyle;
+  privacyStyleObj.innerText = privacyStyle;
+
+  document.querySelector("head")?.append(buttonStyleObj, privacyStyleObj);
 
   // Event listener to execute callback on keypress
   document.onkeydown = key_callback;
