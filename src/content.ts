@@ -1,9 +1,23 @@
-import { KeyDictionary, SettingsObj } from "./types";
+type KeyDictionary = {
+  ctrl: boolean;
+  alt: boolean;
+  shift: boolean;
+  key: string;
+  code: string;
+};
+
+type OptionalKeyDictionary =  KeyDictionary | 'disabled';
+
+type OptionalBoolean = boolean | 'disabled';
+
+type SettingsObj = {
+  [key: string]: boolean | KeyDictionary | 'disabled'
+};
 
 ("use strict");
 
 // Associative array to hold user preferences
-var hotkey_dict: SettingsObj;
+var hotkey_dict: SettingsObj = {};
 
 // Load user hotkeys into array.
 chrome.storage.local.get(
@@ -28,7 +42,7 @@ chrome.storage.local.get(
   },
   function (items) {
     Object.keys(items).forEach(function (key, index) {
-      hotkey_dict[key as keyof SettingsObj] = items[key];
+      hotkey_dict[key] = items[key];
     });
   }
 );
@@ -169,7 +183,7 @@ function printReport() {
 }
 
 // Tweaks that need to intercept the DOM go here.
-function dom_callback(mutationList: MutationRecord[], observer: MutationObserver) {
+function domCallback(mutationList: MutationRecord[], observer: MutationObserver) {
   if (window.top === null) {
     throw new ReferenceError("the sky is falling");
   }
@@ -334,7 +348,7 @@ function dom_callback(mutationList: MutationRecord[], observer: MutationObserver
 }
 
 // right click on listing grid to open actions
-function mouse_callback(e: MouseEvent) {
+function mouseCallback(e: MouseEvent) {
   const source = e.target as HTMLElement;
   const isListingMaintContextEnabled = hotkey_dict["maintain_context"];
   if (isListingMaintContextEnabled) {
@@ -353,7 +367,7 @@ function mouse_callback(e: MouseEvent) {
 
 // All hotkeys wrapped in a callback.
 // TODO - This block might benefit from increased modularity.
-function key_callback(e: KeyboardEvent) {
+function keyCallback(e: KeyboardEvent) {
   // this log line to display hotkeys in console for debugging
   //console.log(`${e.ctrlKey}+${e.shiftKey}+${e.key} | ${e.code}`)
 
@@ -598,12 +612,12 @@ function key_callback(e: KeyboardEvent) {
   }
 }
 
-document.addEventListener("load", function () {
+window.addEventListener("load", function () {
   // injecting a few simple styles to reference in above functions
   const buttonStyleObj = document.createElement("style");
   const privacyStyleObj = document.createElement("style");
-  const buttonStyle = `<style>.whitespace_button {float:left;clear:left;display:inline-block;margin-left:120px;}</style>`;
-  const privacyStyle = `<style>.privacy {font-weight:bold;text-decoration:underline}.privacy-color {background:goldenrod}</style>`;
+  const buttonStyle = `.whitespace_button {float:left;clear:left;display:inline-block;margin-left:120px;}`;
+  const privacyStyle = `.privacy {font-weight:bold;text-decoration:underline}.privacy-color {background:goldenrod}`;
 
   buttonStyleObj.innerText = buttonStyle;
   privacyStyleObj.innerText = privacyStyle;
@@ -611,12 +625,12 @@ document.addEventListener("load", function () {
   document.querySelector("head")?.append(buttonStyleObj, privacyStyleObj);
 
   // Event listener to execute callback on keypress
-  document.onkeydown = key_callback;
+  document.onkeydown = keyCallback;
 
-  document.oncontextmenu = mouse_callback;
+  document.oncontextmenu = mouseCallback;
 
   // Mutation observer for automatic changes to DOM
-  const observer = new MutationObserver(dom_callback);
+  const observer = new MutationObserver(domCallback);
   observer.observe(document, {
     attributes: false,
     childList: true,
