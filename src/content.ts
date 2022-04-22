@@ -14,6 +14,7 @@ type SettingsObj = {
   [key: string]: boolean | KeyDictionary | 'disabled'
 };
 
+
 ("use strict");
 
 // Associative array to hold user preferences
@@ -193,7 +194,7 @@ function domCallback(mutationList: MutationRecord[], observer: MutationObserver)
   }
   let frame = getNestedFrame(window.top, "listingFrame");
 
-  if (!(frame instanceof HTMLIFrameElement)) {
+  if (typeof frame === 'boolean') {
     return;
   } // guard clause
   let doc = frame.contentDocument;
@@ -581,7 +582,7 @@ function keyCallback(e: KeyboardEvent) {
       throw new ReferenceError("top window element is null");
     }
     let targetFrame = getNestedFrame(window.top, "listingFrame");
-    if (targetFrame instanceof HTMLIFrameElement) {
+    if (typeof targetFrame !== 'boolean') {
       //console.log(target_frame)
       var open = targetFrame.querySelector<HTMLElement>(".f-form-openall");
       open?.click();
@@ -600,11 +601,11 @@ function keyCallback(e: KeyboardEvent) {
     }
     var rootWindow = getRootWindow(window);
     var rootDocument: Document | null = null;
-    if (rootWindow instanceof Window) {
+    if (typeof rootWindow != 'boolean' && 'document' in rootWindow) {
       rootDocument = rootWindow.document;
     }
     var assumeMenuLink: HTMLElement | null = null;
-    if (rootDocument instanceof Document) assumeMenuLink = rootDocument.querySelector("#lnkAssume");
+    if (rootDocument !== null) assumeMenuLink = rootDocument.querySelector("#lnkAssume");
     assumeMenuLink?.click();
     window.setTimeout(() => {
       focusFindField(window);
