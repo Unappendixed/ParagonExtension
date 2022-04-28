@@ -230,10 +230,9 @@ function domCallback(mutationList: MutationRecord[], observer: MutationObserver)
   }
   reconnectObserver();
 
+  //FIXME currently doesn't work because listingFrame isn't available
+  // for some reason
   function createRemoveBreakButtons(doc: Document) {
-    // let button = document.querySelector(
-    //   '<button type="button" class="whitespace_button" tabindex="-1">Remove Breaks</button>'
-    // );
     const button = document.createElement("button");
     button.setAttribute("type", "button");
     button.setAttribute("class", "whitespace-button");
@@ -353,7 +352,7 @@ function mouseCallback(e: MouseEvent) {
   const source = e.target as HTMLElement;
   const isListingMaintContextEnabled = hotkey_dict["maintain_context"];
   if (isListingMaintContextEnabled) {
-    const isSelectedElementTableData = source.tagName === "td";
+    const isSelectedElementTableData = source.tagName === "TD";
     const canFindListingGrid = document.querySelectorAll("#gbox_grid").length > 0;
     if (isSelectedElementTableData && canFindListingGrid) {
       e.preventDefault();
@@ -615,15 +614,13 @@ function keyCallback(e: KeyboardEvent) {
 
 window.addEventListener("load", function () {
   // injecting a few simple styles to reference in above functions
-  const buttonStyleObj = document.createElement("style");
-  const privacyStyleObj = document.createElement("style");
+  const inlineStyles = document.createElement("style");
   const buttonStyle = `.whitespace_button {float:left;clear:left;display:inline-block;margin-left:120px;}`;
   const privacyStyle = `.privacy {font-weight:bold;text-decoration:underline}.privacy-color {background:goldenrod}`;
 
-  buttonStyleObj.innerText = buttonStyle;
-  privacyStyleObj.innerText = privacyStyle;
+  inlineStyles.innerText = buttonStyle + privacyStyle;
 
-  document.querySelector("head")?.append(buttonStyleObj, privacyStyleObj);
+  document.querySelector("head")?.append(inlineStyles);
 
   // Event listener to execute callback on keypress
   document.onkeydown = keyCallback;
