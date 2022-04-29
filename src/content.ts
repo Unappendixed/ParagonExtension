@@ -456,9 +456,11 @@ function keyCallback(e: KeyboardEvent) {
       throw new ReferenceError("top window not found i guess");
     }
     let lst: NodeListOf<HTMLElement> = window.top.document.querySelectorAll<HTMLElement>(
-      'em[title="Close Tab"]:visible'
+      'em[title="Close Tab"]'
     );
-    lst[lst.length - 1].click();
+    let arr: HTMLElement[] = [];
+    lst.forEach(e => e.getAttribute('display') !== 'none' ? arr.push(e) : null)
+    arr[arr.length - 1].click();
   }
 
   function togglePrivacy() {
