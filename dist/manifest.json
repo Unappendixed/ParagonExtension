@@ -1,17 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "<Project Name>",
-  "version": "0.0.1",
+  "name": "Paragon Userkeys",
+  "version": "0.2.0",
   "content_scripts": [
     {
-      "matches": ["<url_pattern>"],
+      "matches": ["https://*.paragonrels.com/*"],
+      "all_frames": true,
       "js": ["./content_import.js"]
     }
   ],
   "web_accessible_resources": [
     {
       "resources": ["content/*"],
-      "matches": ["<url_pattern>"]
+      "matches": ["https://*.paragonrels.com/*"]
     }
+  ],
+  "permissions": [
+    "storage",
+    ""
   ]
 }
