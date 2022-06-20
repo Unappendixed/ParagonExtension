@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "<Project Name>",
+  "version": "0.0.1",
+  "content_scripts": [
+    {
+      "matches": ["<url_pattern>"],
+      "js": ["./content_import.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["content/*"],
+      "matches": ["<url_pattern>"]
+    }
+  ]
+}
