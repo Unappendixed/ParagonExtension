@@ -1,4 +1,4 @@
-function goToListingMaintenance(e: KeyboardEvent) {
+export default function goToListingMaintenance(e: KeyboardEvent) {
   e.preventDefault();
   if (window.top === null) {
     throw new ReferenceError("Top window is null");

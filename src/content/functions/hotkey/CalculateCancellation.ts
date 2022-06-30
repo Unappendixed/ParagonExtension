@@ -1,11 +1,16 @@
+import { getNestedFrame, isCommercial, numberPad } from "../utilities.js";
 export default function calculateCancellation(e: Event) {
   e.preventDefault();
   if (window.top === null) {
     throw new ReferenceError("The top window is null... somehow");
   }
-  let doc = getNestedFrame(window.top, "listingFrame");
-  if (typeof doc === "boolean") {
+  let frame = getNestedFrame(window.top, "listingFrame");
+  if (typeof frame === "boolean") {
     throw new ReferenceError("Listing maintenance frame cannot be null");
+  }
+  let doc = frame.contentDocument;
+  if (typeof doc === "boolean" || doc === null) {
+    throw new ReferenceError("Iframe content document cannot be found");
   }
   let canc: HTMLInputElement | null;
   let eff: HTMLInputElement | null;
@@ -28,9 +33,7 @@ export default function calculateCancellation(e: Event) {
     let eff_date = new Date(effArrayNums[2], effArrayNums[0] - 1, effArrayNums[1]);
     let new_date = eff_date;
     new_date.setDate(eff_date.getDate() + 59);
-    //let new_date_string = `${new_date.getMonth() + 1}/${new_date.getDate()}/${new_date.getFullYear()}`
     let new_date_string = numberPad(new_date);
-    // eff.innerHTML += `<span><i>+60 days: (${new_date_string})</i></span>`
     canc.value = new_date_string;
   }
 }

@@ -1,4 +1,6 @@
-function printListing(e: KeyboardEvent) {
+import { getNestedFrame, printReport} from "../utilities.js";
+
+export default function printListing(e: KeyboardEvent) {
   e.preventDefault();
   if (window.top === null) {
     throw new ReferenceError("top window element could not be found");

@@ -9,6 +9,10 @@
       "js": ["./content_import.js"]
     }
   ],
+  "options_page": "index.html",
+  "actions": {
+    
+  }
   "web_accessible_resources": [
     {
       "resources": ["content/*"],
@@ -16,7 +20,6 @@
     }
   ],
   "permissions": [
-    "storage",
-    ""
+    "storage"
   ]
 }

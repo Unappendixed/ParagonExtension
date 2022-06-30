@@ -1,7 +1,7 @@
 export default function findAndDisplayBrokerage(doc: Document) {
   let title = doc.querySelector<HTMLElement>(".f-pcnm-legend");
   if (title === null) {
-    throw new ReferenceError("Frame header not found.");
+    return;
   }
   if (!title.dataset.brokerage) {
     let json_string = doc.querySelector<HTMLInputElement>("#hdnf_28")?.value;

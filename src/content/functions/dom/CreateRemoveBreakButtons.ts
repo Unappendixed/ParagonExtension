@@ -21,21 +21,23 @@ export default function createRemoveBreakButtons(doc: Document) {
     for (let elem of texts) {
       let iter_button: HTMLElement = button.cloneNode() as HTMLElement;
       iter_button.setAttribute("for", elem.id);
+      iter_button.className = "whitespace-button";
+      iter_button.innerText = "Remove Breaks";
+      elem.before(iter_button);
       iter_button.addEventListener("click", function (args: MouseEvent) {
         if (doc === null) {
           throw new ReferenceError("Listing maintenance iframe is null");
         }
-        let text_elem = doc.querySelector<HTMLElement>(`#${(args.target as HTMLElement).getAttribute("for")}`);
+        let text_elem = doc.querySelector<HTMLTextAreaElement>(`#${(args.target as HTMLElement).getAttribute("for")}`);
         if (text_elem === null) {
           throw new ReferenceError("Can't find text box connected to clicked button.");
         }
-        let text = text_elem.getAttribute("value");
+        let text = text_elem.value;
         if (text) {
           text = text.replace(/\n+/g, " ");
-          text_elem.setAttribute("value", text);
+          text_elem.value =  text;
         }
       });
-      elem.before(iter_button);
     }
   }
 }

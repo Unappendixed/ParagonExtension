@@ -1,36 +1,32 @@
+import { KeyDictionary, OptionDictionary } from './../types';
+
 export function isCommercial() {
   return document.location.hostname.split(".")[0] == "bccls";
 }
 
 /** Helper function for keybinding verification
- * @param {String} id hotkey_dict key to check key combination against
+  * @param {KeyDictionary} keyObj Object representing configuration for a particular feature
  * @param {Event} event Event object.
  * @return {Boolean} Returns true if the keypresses match user's keybinds, false otherwise.
  */
-export function keyMatch(id: string, event: KeyboardEvent) {
-  const settings_id = id as keyof SettingsObj;
-  const areKeysDisabledGlobal = hotkey_dict["toggle"] == false;
-  if (areKeysDisabledGlobal) {
+export function keyMatch(keyObj: KeyDictionary, event: KeyboardEvent) {
+  // const areKeysDisabledGlobal = hotkey_dict["toggle"] == false;
+  // if (areKeysDisabledGlobal) {
+  //   return false;
+  // }
+  let keyConfig = keyObj.config;
+  if (!keyObj.config.enabled) {
     return false;
   }
-  const isKeyDisabled = hotkey_dict[id as keyof SettingsObj] === "disabled";
-  if (isKeyDisabled) {
-    return false;
-  }
-  const currentHotkey = hotkey_dict[settings_id];
-  if (typeof currentHotkey == "boolean" || typeof currentHotkey == "string") {
-    return null;
-  }
+  // if (typeof currentHotkey == "boolean" || typeof currentHotkey == "string") {
+  //   return null;
+  // }
   const doesKeyMatch =
-    event.ctrlKey == currentHotkey.ctrl &&
-    event.altKey == currentHotkey.alt &&
-    event.shiftKey == currentHotkey.shift &&
-    event.code == currentHotkey.code;
-  if (doesKeyMatch) {
-    return true;
-  } else {
-    return false;
-  }
+    event.ctrlKey == keyConfig.ctrl &&
+    event.altKey == keyConfig.alt &&
+    event.shiftKey == keyConfig.shift &&
+    event.code == keyConfig.code;
+  return doesKeyMatch;
 }
 
 export function numberPad(date: Date) {
@@ -130,7 +126,7 @@ export function printReport() {
   hidden_frame.contentWindow.print();
 }
 
-export function reconnectObserver(observer: MutationObserver) {
+export function reconnectObserver(observer: MutationObserver, doc: Document) {
   observer.observe(document, {
     attributes: false,
     childList: true,
@@ -138,7 +134,7 @@ export function reconnectObserver(observer: MutationObserver) {
   });
 }
 
-export function disconnectObserver(observer: MutationObserver) {
+export function disconnectObserver(observer: MutationObserver, doc: Document) {
   observer.takeRecords();
   observer.disconnect();
 }

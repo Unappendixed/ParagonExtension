@@ -1,4 +1,6 @@
-function goToAssumeIdentity() {
+import { getRootWindow} from "../utilities.js";
+
+export default function goToAssumeIdentity() {
   function focusFindField(window: Window) {
     try {
       window?.document?.querySelector<HTMLElement>("#search_cd")?.focus();

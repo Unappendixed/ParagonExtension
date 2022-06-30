@@ -1,22 +1,28 @@
-function togglePrivacy(e: KeyboardEvent) {
+import { getNestedFrame } from "../utilities.js";
+
+export default function togglePrivacy(e: KeyboardEvent) {
   e.preventDefault();
   if (window.top === null) {
     throw new ReferenceError("window.top is null");
   }
-  var frame = getNestedFrame(window.top, "listingFrame");
+  let frame = getNestedFrame(window.top, "listingFrame");
   if (typeof frame === "boolean") {
     throw new ReferenceError("Failed to find nested listing frame element.");
   }
-  var select: HTMLInputElement | null = null;
-  var name: HTMLInputElement | null = null;
+  let doc = frame.contentDocument;
+  if (typeof doc === "boolean" || doc === null) {
+    throw new ReferenceError("Frame's content document not found");
+  }
+  let select: HTMLInputElement | null = null;
+  let name: HTMLInputElement | null = null;
   switch (document.location.hostname.split(".")[0]) {
     case "bcres":
-      select = frame.querySelector<HTMLInputElement>("#f_214");
-      name = frame.querySelector('label[for="f_423"');
+      select = doc.querySelector<HTMLInputElement>("#f_214");
+      name = doc.querySelector('label[for="f_423"');
       break;
     case "bccls":
-      select = frame.querySelector<HTMLInputElement>("#f_217");
-      name = frame.querySelector('label[for="f_429"');
+      select = doc.querySelector<HTMLInputElement>("#f_217");
+      name = doc.querySelector('label[for="f_429"');
       break;
   }
 
@@ -28,12 +34,11 @@ function togglePrivacy(e: KeyboardEvent) {
   }
 
   if (["N", ""].includes(select.value)) {
-    select.setAttribute("value", "Y");
+    select.value = "Y";
     name.classList.add("privacy");
-
-    frame.querySelector(".f-pcnm-legend")?.setAttribute("class", "privacy-color");
-  } else if (select.getAttribute("value") == "Y") {
-    select.setAttribute("value", "");
+    doc.querySelector(".f-pcnm-legend")?.classList.add("privacy-color");
+  } else if (select.value === "Y") {
+    select.value = "";
     name.classList.remove("privacy");
   }
 }

@@ -1,4 +1,4 @@
-function focusPowerSearch(e: KeyboardEvent) {
+export default function focusPowerSearch(e: KeyboardEvent) {
   e.preventDefault();
   if (window.top === null) {
     throw new ReferenceError("top window element could not be found");

@@ -1,3 +1,5 @@
+import { isCommercial } from "../utilities.js";
+
 export default function showExpiryNextToCancellation(doc: Document) {
   let expiryElement = doc.querySelector<HTMLInputElement>("#f_34");
   if (expiryElement === null) {
