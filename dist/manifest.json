@@ -9,10 +9,13 @@
       "js": ["./content_import.js"]
     }
   ],
-  "options_page": "index.html",
-  "actions": {
-    
-  }
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "action": {
+    "default_title": "Options"
+  },
   "web_accessible_resources": [
     {
       "resources": ["content/*"],
