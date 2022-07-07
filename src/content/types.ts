@@ -1,30 +1,36 @@
+export interface KeyConfig {
+  enabled: boolean;
+  ctrl: boolean;
+  shift: boolean;
+  alt: boolean;
+  key: string;
+  code: string;
+}
+
+export interface ToggleConfig {
+  enabled: boolean;
+}
+
 export interface OptionDictionary {
   type: "dom" | "mouse" | "meta" | "key";
-  config: {
-    enabled: boolean;
-  };
+  description: string;
+  config: ToggleConfig;
 }
 
 export interface DomDictionary {
-  type: "dom",
-  config: {
-    enabled: boolean,
-  },
-  function: Function,
+  type: "dom";
+  description: string;
+  config: ToggleConfig;
+  function: Function;
 }
 
 export interface KeyDictionary extends OptionDictionary {
+  description: string;
   type: "key";
-  config: {
-    ctrl: boolean;
-    alt: boolean;
-    shift: boolean;
-    key: string;
-    code: string;
-    enabled: boolean;
-  };
+  config: KeyConfig;
   function: Function;
 }
+
 export interface SettingsObj {
-  [key: string]: OptionDictionary;
+  [key: string]: OptionDictionary | KeyDictionary;
 }
