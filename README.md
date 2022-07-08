@@ -8,3 +8,4 @@ Chrome by default only allows extensions from the official Chrome Web Store for 
 
 ## Customizing settings
 
+<img src="./ParagonExtensionSEttings.png"></img>
