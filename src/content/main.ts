@@ -21,7 +21,6 @@ chrome.storage.local.get(keyConfig).then(res => {
 });
 
 function keyCallback(e: KeyboardEvent) {
-  console.log(settingsDict);
   for (let key in settingsDict) {
     let keyObj = settingsDict[key];
     if (keyObj.type !== "key") continue;
