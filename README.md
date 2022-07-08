@@ -1,13 +1,13 @@
-# ParagonExtension
-A Chrome extension to improve Paragon data inputting for board admins.
+# Paragon Admin Extension
+
+A Chrome extension improve Paragon productivity for board admins.
 
 ## Installing unpacked
-Chrome by default only allows extensions from the official Chrome Web Store for security reasons. To test this extension locally, you will need to enable Developer Mode and load it unpacked. See [this link for instructions](https://webkul.com/blog/how-to-install-the-unpacked-extension-in-chrome/).
+
+Chrome by default only allows extensions from the official Chrome Web Store for security reasons. To test this extension locally, you will need to enable Developer Mode and load it unpacked. See this link for instructions.
 
 ## Customizing settings
-Once the extension is loaded, an icon will appear in the extensions tray at the top right of the browser. Clicking on this icon will open the extension's settings.
 
-<img src="https://i.imgur.com/NPbJdxJ.png" width="500px"/>
+Once the extension is loaded, an icon will appear in the extension tray at the top right of the browser. Clicking on this icon will open the extension's settings page. After changing any settings, make sure you reload any open Paragon tabs, as the changes will not take effect until then.
 
-## Code contents
-The only code that's relevant to Paragon itself is in content.js. Manifest.json declares the extention's permissions. All  other files including hotkeys.js, background.js, options.html, and all style/image files are for the settings page or general theming. JQuery is the only dependency, and it could be removed in future versions.
+<img height="500px" src="./ParagonExtensionSettings.png"></img>
