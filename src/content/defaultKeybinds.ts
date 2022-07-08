@@ -13,6 +13,7 @@ import goToListingMaintenance from "./functions/hotkey/GoToListingMaintenance.js
 import printListing from "./functions/hotkey/PrintListing.js";
 import saveListing from "./functions/hotkey/SaveListing.js";
 import togglePrivacy from "./functions/hotkey/TogglePrivacy.js";
+import uppercaseField from "./functions/hotkey/UppercaseField.js";
 import listingMoreActionsContext from "./functions/mouse/ListingMoreActionsContext.js";
 
 import { SettingsObj } from "./types";
@@ -119,4 +120,10 @@ export default <SettingsObj> {
     config: { ctrl: false, alt: false, shift: false, key: "F4", code: "F4", enabled: true },
     function: goToAssumeIdentity,
   },
+  uppercaseField: {
+    description: "Convert selected field to all caps",
+    type: "key",
+    config: { ctrl: false, alt: true, shift: false, key: "u", code: "KeyU", enabled: true },
+    function: uppercaseField,
+  }
 };
