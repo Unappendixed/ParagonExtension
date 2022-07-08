@@ -9,10 +9,11 @@
   padding: 0;
   color: white;
   font-family: Arial, Helvetica, sans-serif;
+  box-sizing: border-box;
 }
 body {
   background-color: var(--background);
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 #app {
@@ -27,27 +28,71 @@ h1 {
 
 h2 {
   text-align: center;
-  padding: 0.5em;
+  padding: 1em;
   grid-column: 1/5;
 }
 
 .options {
   background-color: var(--div-color);
   width: 100%;
-  min-height: 10rem;
+  /* min-height: 10rem; */
   border-radius: 0.5rem;
   margin-top: 1rem;
   display: grid;
   grid-template-columns: max-content min-content max-content min-content;
   justify-content: space-around;
+  align-items: center;
   column-gap: 1rem;
   row-gap: 0.5rem;
   padding: 1rem;
 }
 
+.hide {
+  visibility: hidden;
+}
+
 .hotkey input {
-  width: 6rem;
+  width: 8rem;
   line-height: 1.5;
   background-color: black;
   border: 1px solid var(--highlight-color);
+  padding: 0.3rem;
+}
+
+button {
+  font-size: 1.2rem;
+  padding: 0.5em;
+  background-color: var(--background);
+  border: 1px solid var(--highlight-color);
+  color: white;
+  /* font-weight: bold; */
+  transition: border 100ms;
+}
+
+button:hover {
+  cursor: pointer;
+}
+
+button:active {
+  border: 1px solid white;
+}
+
+#reset {
+  grid-column: 4/5;
+}
+
+label {
+  vertical-align: middle;
+}
+
+.blur {
+  filter: blur(20px);
+  position: relative;
+}
+
+.blur::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--div-color);
 }

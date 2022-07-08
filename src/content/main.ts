@@ -1,20 +1,27 @@
 import defaultKeybinds from "./defaultKeybinds.js";
 import {getNestedFrame, keyMatch} from "./functions/utilities.js";
-import { DomDictionary, KeyDictionary, SettingsObj } from "./types";
+import { DomDictionary, KeyConfig, KeyDictionary, SettingsObj, ToggleConfig } from "./types";
 
 ("use strict");
 
 // Associative array to hold user preferences
-var settingsDict: SettingsObj = defaultKeybinds;
+const settingsDict: SettingsObj = defaultKeybinds;
+let keyConfig: { [key: string]: ToggleConfig | KeyConfig } = {}
 
-// Load user hotkeys into array.
-// chrome.storage.local.get(defaultKeybinds, function (items) {
-//   Object.keys(items).forEach(function (key, index) {
-//     hotkeyDict[key].config = items[key];
-//   });
-// });
+for (let key in settingsDict) {
+  keyConfig[key] = settingsDict[key].config;
+}
+
+chrome.storage.local.get(keyConfig).then(res => {
+  for (let key in settingsDict) {
+    let option = settingsDict[key];
+    option.config = res[key];
+    settingsDict[key] = option;
+  }
+});
 
 function keyCallback(e: KeyboardEvent) {
+  console.log(settingsDict);
   for (let key in settingsDict) {
     let keyObj = settingsDict[key];
     if (keyObj.type !== "key") continue;

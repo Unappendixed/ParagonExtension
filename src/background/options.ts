@@ -1,8 +1,12 @@
 import { OptionDictionary } from './../content/types';
-import defaultHotkeys from '../content/defaultKeybinds.js';
+import defaultKeybinds from '../content/defaultKeybinds.js';
 import { KeyConfig, ToggleConfig } from '../content/types';
 
 let keyConfig: { [key: string]: KeyConfig | ToggleConfig };
+
+let globalOptionsPanel = document.querySelector<HTMLDivElement>('.global');
+let displayOptionsPanel = document.querySelector<HTMLDivElement>('.display');
+let hotkeyOptionsPanel = document.querySelector<HTMLDivElement>('.hotkey');
 
 function readKeys(e: KeyboardEvent) {
   e.preventDefault();
@@ -27,7 +31,6 @@ function readKeys(e: KeyboardEvent) {
       code: e.code,
       enabled: true,
     };
-    //console.log(hotkey_dict[e.target.id]['code'])
   }
   saveSettings();
 }
@@ -53,16 +56,11 @@ function keyboardConfigToString(configObject: KeyConfig): string {
 
 async function loadSettings() {
   let keyConfig: { [key: string]: ToggleConfig | KeyConfig } = {};
-  for (let key in defaultHotkeys) {
-    keyConfig[key] = defaultHotkeys[key].config;
+  for (let key in defaultKeybinds) {
+    keyConfig[key] = defaultKeybinds[key].config;
   }
 
-  let response = await chrome.storage.local.get(keyConfig);
-  // , function (items) {
-  // console.log(items);
-  // keyConfig = items;
-  // });
-  return keyConfig;
+  return await chrome.storage.local.get(keyConfig);
 }
 
 function saveSettings() {
@@ -70,21 +68,30 @@ function saveSettings() {
   chrome.storage.local.set({ test: 'come on man' });
 }
 
-function resetToDefaults() {}
+async function resetToDefaults (e: MouseEvent) {
+  await chrome.storage.local.clear();
+  await chrome.storage.local.set(defaultKeybinds);
+  chrome.tabs.reload();
+}
+
+function handleHotkeyDivState(state: boolean) {
+  if (!state) {
+    hotkeyOptionsPanel?.classList.add('blur');
+  } else {
+    hotkeyOptionsPanel?.classList.remove('blur');
+  }
+}
 
 window.addEventListener('load', async function () {
   keyConfig = await loadSettings();
-  let globalOptionsPanel = document.querySelector<HTMLDivElement>('.global');
-  let displayOptionsPanel = document.querySelector<HTMLDivElement>('.display');
-  let hotkeyOptionsPanel = document.querySelector<HTMLDivElement>('.hotkey');
   for (let key in keyConfig) {
     let config = keyConfig[key];
-    if ("ctrl" in config) {
+    if ('ctrl' in config) {
       if (!('ctrl' in config)) continue;
       // const div = document.createElement("div");
       // div.setAttribute("id", key);
       const label = document.createElement('label');
-      label.innerText = defaultHotkeys[key].description;
+      label.innerText = defaultKeybinds[key].description;
       label.setAttribute('for', key);
       const input = document.createElement('input');
       input.addEventListener('keydown', readKeys);
@@ -94,9 +101,9 @@ window.addEventListener('load', async function () {
       input.value = keyboardConfigToString(config);
       hotkeyOptionsPanel?.appendChild(label);
       hotkeyOptionsPanel?.appendChild(input);
-    } else if (!("ctrl" in config)) {
+    } else if (!('ctrl' in config) && defaultKeybinds[key].type !== 'meta') {
       const label = document.createElement('label');
-      label.innerText = defaultHotkeys[key].description;
+      label.innerText = defaultKeybinds[key].description;
       label.setAttribute('for', key);
       const input = document.createElement('input');
       input.id = key;
@@ -105,9 +112,42 @@ window.addEventListener('load', async function () {
       input.checked = config.enabled;
       console.log(key);
       console.log(config.enabled);
+      console.log(keyConfig[key].enabled);
       input.addEventListener('change', readChecks);
       displayOptionsPanel?.appendChild(label);
       displayOptionsPanel?.appendChild(input);
+    } else if (defaultKeybinds[key].type === 'meta') {
+      const label = document.createElement('label');
+      label.setAttribute('for', key);
+      label.innerText = defaultKeybinds[key].description;
+      const input = document.createElement('input');
+      input.setAttribute('type', 'checkbox');
+      input.checked = config.enabled;
+      input.id = key;
+      input.setAttribute('data-key', key);
+      input.addEventListener('change', readChecks);
+      globalOptionsPanel?.appendChild(label);
+      globalOptionsPanel?.appendChild(input);
     }
+  }
+  const button = document.createElement("button");
+  button.innerText = "Reset";
+  button.title = "Reset all settings to default";
+  button.id = "reset";
+  button.addEventListener("click", resetToDefaults);
+  
+  globalOptionsPanel?.classList.remove("hide");
+  displayOptionsPanel?.classList.remove("hide");
+  hotkeyOptionsPanel?.classList.remove("hide");
+
+  globalOptionsPanel?.appendChild(button);
+  let toggleAll = document.querySelector<HTMLInputElement>('#toggle');
+  if (toggleAll) {
+    handleHotkeyDivState(toggleAll.checked);
+    toggleAll.addEventListener('change', () => {
+      if (toggleAll) { // I am outraged that typescript makes me do this
+        handleHotkeyDivState(toggleAll.checked);
+      }
+    });
   }
 });
