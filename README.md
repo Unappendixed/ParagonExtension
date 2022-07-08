@@ -1,6 +1,6 @@
 # Paragon Admin Extension
 
-A Chrome extension improve Paragon productivity for board admins.
+A Chrome extension to improve Paragon productivity for board admins.
 
 ## Installing unpacked
 
