@@ -52,9 +52,11 @@ export function getNestedFrame(start: Window, target: string): HTMLIFrameElement
   if (start.frames.length) {
     for (let ind = 0; ind < start.frames.length; ind++) {
       let i = start.frames[ind];
-      if (i.frameElement === null) {
-        throw new Error("Index out of range");
-      }
+      try {
+        if (i.frameElement === null) {
+          return false;
+        }
+      } catch (e) { return false } // squelch errors when traversing non Paragon frames
       if (i.frameElement.id == target) {
         result = i.frameElement as HTMLIFrameElement;
       } else {
