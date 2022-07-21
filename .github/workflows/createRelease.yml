@@ -2,8 +2,8 @@ name: Create Release
 on:
   push:
     tags:
-      - "v*.*.*"
-        
+      - 'v*.*.*'
+
 jobs:
   zip-files:
     runs-on: ubuntu-latest
@@ -11,10 +11,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Zip files
-        uses: vimtor/action-zip@v1
+        uses: TheDoctor0/zip-release@0.6.2
         with:
-         files: dist/
-         dest: ParagonExtension_${{ github.ref_name }}.zip
+          type: zip
+          path: ./dist
+          filename: ParagonExtension_${{ github.ref_name }}.zip
       - name: Create Release
         uses: softprops/action-gh-release@v0.1.14
         with:
