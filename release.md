@@ -1,0 +1,1 @@
+Implemented some basic github actions to automate releases.
