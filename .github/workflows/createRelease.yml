@@ -18,5 +18,5 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v0.1.14
         with:
-          body_path: /release.md
+          body_path: release.md
           files: ParagonExtension_${{ github.ref_name }}.zip
