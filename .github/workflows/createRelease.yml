@@ -10,11 +10,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@v3
+      - run: npm i -g yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn tsc
       - name: Zip files
         uses: TheDoctor0/zip-release@0.6.2
         with:
           type: zip
-          path: ./dist
+          path: ./dist/*
           filename: ParagonExtension_${{ github.ref_name }}.zip
       - name: Create Release
         uses: softprops/action-gh-release@v0.1.14
