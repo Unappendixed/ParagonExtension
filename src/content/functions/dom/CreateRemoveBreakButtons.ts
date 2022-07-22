@@ -34,7 +34,8 @@ export default function createRemoveBreakButtons(doc: Document) {
         }
         let text = text_elem.value;
         if (text) {
-          text = text.replace(/\n+/g, "");
+          text = text.replace(/\n+/g, " ");
+          text = text.replace(/ {2,}/g, " ");
           text_elem.value =  text;
         }
       });
