@@ -1,1 +1,1 @@
-Implemented some basic github actions to automate releases.
+Fixed typo causing the 'convert field to uppercase' function to stop working.
