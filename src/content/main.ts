@@ -1,5 +1,5 @@
 import defaultKeybinds from "./defaultKeybinds.js";
-import {getNestedFrame, keyMatch} from "./functions/utilities.js";
+import { getNestedFrame, keyMatch } from "./functions/utilities.js";
 import { DomDictionary, KeyConfig, KeyDictionary, SettingsObj, ToggleConfig } from "./types";
 
 ("use strict");
@@ -20,21 +20,20 @@ chrome.storage.local.get(keyConfig).then(res => {
   }
 });
 
-function keyCallback(e: KeyboardEvent) {
+function keyCallback (e: KeyboardEvent) {
   for (let key in settingsDict) {
     let keyObj = settingsDict[key];
     if (keyObj.type !== "key") continue;
     if (keyMatch(keyObj as KeyDictionary, e)) {
       try {
         (keyObj as KeyDictionary).function(e);
-      } catch (e) {}
-      return;
+      } catch (e) { console.log(e) }
     }
   }
 }
 
 
-function domCallback(mutationList: MutationRecord[], observer: MutationObserver) {
+function domCallback (mutationList: MutationRecord[], observer: MutationObserver) {
   if (window.top == null) return;
   const isBannerInMutationList = mutationList.every((e) => (e.target as HTMLElement).id === "app_banner_session");
   if (isBannerInMutationList) return;
@@ -51,7 +50,7 @@ function domCallback(mutationList: MutationRecord[], observer: MutationObserver)
   }
 }
 
-export function main() {
+export function main () {
   // injecting a few simple styles to reference in above functions
   const inlineStyles = document.createElement("style");
   const buttonStyle = `.whitespace-button {float:left;clear:left;display:inline-block;margin-left:120px;}`;
