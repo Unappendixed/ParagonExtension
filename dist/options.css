@@ -86,7 +86,7 @@ label {
 }
 
 .blur {
-  filter: blur(20px);
+  /* filter: blur(20px); */
   position: relative;
 }
 
@@ -94,5 +94,6 @@ label {
   content: "";
   position: absolute;
   inset: 0;
-  background-color: var(--div-color);
+  background-color: black;
+  opacity: 0.9;
 }
