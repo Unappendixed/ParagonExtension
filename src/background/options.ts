@@ -1,4 +1,3 @@
-import { OptionDictionary } from './../content/types';
 import defaultKeybinds from '../content/defaultKeybinds.js';
 import { KeyConfig, ToggleConfig } from '../content/types';
 
@@ -65,12 +64,19 @@ async function loadSettings() {
 
 function saveSettings() {
   chrome.storage.local.set(keyConfig);
-  chrome.storage.local.set({ test: 'come on man' });
+}
+
+function getConfigFromDefaultKeybinds (): { [key: string]: KeyConfig | ToggleConfig } {
+  let tempDict: {[key: string]: KeyConfig | ToggleConfig} = {}
+  for (let key of Object.keys(defaultKeybinds)) {
+    tempDict[key] = defaultKeybinds[key].config;
+  }
+  return tempDict;
 }
 
 async function resetToDefaults (e: MouseEvent) {
   await chrome.storage.local.clear();
-  await chrome.storage.local.set(defaultKeybinds);
+  await chrome.storage.local.set(getConfigFromDefaultKeybinds());
   chrome.tabs.reload();
 }
 
