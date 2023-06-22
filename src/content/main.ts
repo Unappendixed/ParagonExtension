@@ -42,7 +42,7 @@ function domCallback(mutationList: MutationRecord[], observer: MutationObserver)
   if (typeof frame != "boolean") {
     for (let key in settingsDict) {
       let setting = settingsDict[key] as DomDictionary;
-      if (setting.type === "dom" && (setting.config.enabled || true)) {
+      if (setting.type === "dom" && (setting.config.enabled)) {
         // disconnectObserver(observer, document);
         setting.function(frame.contentDocument);
         // reconnectObserver(observer, document);
